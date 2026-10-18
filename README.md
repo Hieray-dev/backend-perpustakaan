@@ -1,0 +1,385 @@
+# perpustakaan-api
+
+REST API backend untuk sistem perpustakaan. Dibuat dengan Go dan `net/http` standar tanpa
+framework, dengan MySQL/MariaDB sebagai basis data dan JWT untuk autentikasi.
+
+Antarmuka frontend dikembangkan terpisah; repo ini hanya menyediakan API.
+
+## Daftar isi
+
+- [Fitur](#fitur)
+- [Teknologi](#teknologi)
+- [Struktur proyek](#struktur-proyek)
+- [Persiapan](#persiapan)
+- [Instalasi](#instalasi)
+- [Konfigurasi `.env`](#konfigurasi-env)
+- [Menjalankan](#menjalankan)
+- [Autentikasi](#autentikasi)
+- [Daftar endpoint](#daftar-endpoint)
+- [Contoh pemakaian](#contoh-pemakaian)
+- [Peran pengguna](#peran-pengguna)
+- [Alur transaksi](#alur-transaksi)
+- [Rencana pengembangan](#rencana-pengembangan)
+
+## Fitur
+
+**Autentikasi dan kehadiran**
+
+- Login dengan JWT (masa berlaku 24 jam), password di-hash dengan bcrypt
+- Pencatatan absensi otomatis saat petugas login, dengan status `Tepat Waktu` atau
+  `Terlambat` dihitung dari jam masuk shift
+- Akun nonaktif ditolak saat login
+
+**Katalog (akses publik)**
+
+- Daftar buku beserta stok
+- Daftar genre, penerbit, dan fasilitas
+
+**Transaksi peminjaman**
+
+- Anggota membuat *booking* buku, dengan batas pengambilan 24 jam dan kode transaksi
+- Petugas mengonfirmasi booking menjadi peminjaman, jatuh tempo 7 hari
+- Pengembalian buku dengan perhitungan denda otomatis dan pengembalian stok
+- Riwayat seluruh transaksi
+
+**Manajemen oleh admin**
+
+- Menambah akun petugas beserta shiftnya
+- Mengubah role pengguna
+- Reset password pengguna
+
+## Teknologi
+
+| Bagian | Dipakai |
+|---|---|
+| Bahasa | Go 1.26 |
+| HTTP | `net/http` (standard library, tanpa framework) |
+| Database | MySQL / MariaDB |
+| Driver | `github.com/go-sql-driver/mysql` v1.10.0 |
+| JWT | `github.com/golang-jwt/jwt/v5` v5.3.1 |
+| Hash password | `golang.org/x/crypto/bcrypt` |
+| Konfigurasi | `github.com/joho/godotenv` v1.5.1 |
+
+## Struktur proyek
+
+```
+perpustakaan-api/
+├── main.go                 # entry point, CORS middleware, HTTP server
+├── config/
+│   └── db.go               # koneksi MySQL, membaca .env
+├── controllers/            # handler HTTP per domain
+│   ├── auth.go             # register, login, absensi
+│   ├── buku.go             # katalog dan tambah buku
+│   ├── peminjaman.go       # booking, konfirmasi, riwayat
+│   ├── pengembalian.go     # pengembalian dan denda
+│   ├── admin.go            # ubah role, reset password
+│   ├── user.go             # tambah petugas
+│   ├── fasilitas.go
+│   ├── genre.go
+│   └── penerbit.go
+├── middleware/
+│   ├── auth.go             # verifikasi JWT, menaruh claims di context
+│   └── role.go             # AdminOnly, PetugasOrAdmin
+├── models/                 # struct request dan response
+├── policy/
+│   └── policy.go           # konstanta role
+├── routes/
+│   └── routes.go           # pendaftaran seluruh rute
+├── utils/
+│   └── jwt.go              # generate dan validasi token
+└── uploads/                # file statis, disajikan di /uploads/
+```
+
+## Persiapan
+
+- Go 1.26 atau lebih baru
+- MySQL 8 atau MariaDB 10.4 atau lebih baru
+- Git
+
+## Instalasi
+
+**1. Clone repositori**
+
+```bash
+git clone git@github.com:Hieray-dev/backend-perpustakaan.git
+cd backend-perpustakaan
+```
+
+**2. Unduh dependensi**
+
+```bash
+go mod download
+```
+
+**3. Buat database**
+
+```bash
+mysql -u root -p -e "CREATE DATABASE db_perpustakaan;"
+```
+
+**4. Import struktur tabel**
+
+```bash
+mysql -u root -p db_perpustakaan < schema.sql
+```
+
+Kalau `schema.sql` belum ada di repo, buat dulu dari database yang sudah jalan:
+
+```bash
+mysqldump -u root -p --no-data db_perpustakaan > schema.sql
+```
+
+**5. Buat akun admin pertama**
+
+Tidak ada endpoint publik untuk membuat admin, jadi akun pertama dibuat lewat database.
+Daftarkan akun biasa lewat `POST /register`, lalu ubah rolenya:
+
+```sql
+UPDATE user SET id_role = 1 WHERE username = 'nama_akun';
+```
+
+**6. Siapkan file `.env`**
+
+```bash
+cp .env.example .env
+```
+
+Lalu isi nilainya seperti dijelaskan di bawah.
+
+## Konfigurasi `.env`
+
+```env
+DB_USER=root
+DB_PASS=
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=db_perpustakaan
+
+JWT_SECRET=
+SERVER_PORT=:8080
+```
+
+| Variabel | Keterangan |
+|---|---|
+| `DB_USER` | Pengguna MySQL |
+| `DB_PASS` | Password MySQL |
+| `DB_HOST` | Host MySQL |
+| `DB_PORT` | Port MySQL, umumnya `3306` |
+| `DB_NAME` | Nama database, gunakan `db_perpustakaan` |
+| `JWT_SECRET` | Kunci penandatanganan token. **Wajib diisi**, dan jangan diganti setelah ada token aktif karena semua token lama langsung tidak berlaku |
+| `SERVER_PORT` | Port server. Boleh `8080` atau `:8080`, keduanya diterima |
+
+File `.env` sudah masuk `.gitignore` dan tidak boleh di-commit.
+
+## Menjalankan
+
+```bash
+go run .
+```
+
+Kalau berhasil akan muncul:
+
+```
+Koneksi Database Berhasil!
+Server running on http://0.0.0.0:8080...
+```
+
+Server mengikat ke `0.0.0.0`, jadi bisa diakses dari perangkat lain di jaringan yang sama
+lewat alamat IP komputermu.
+
+Build ke satu file binary:
+
+```bash
+go build -o perpustakaan-api .
+./perpustakaan-api
+```
+
+## Autentikasi
+
+Alur standar:
+
+1. Kirim `POST /login` dengan `username` dan `password`
+2. Server membalas `token` berupa JWT
+3. Sertakan token di setiap request yang butuh login:
+
+```
+Authorization: Bearer <token>
+```
+
+Isi token memuat `id_user`, `username`, dan `id_role`. Masa berlakunya 24 jam.
+
+Ada tiga tingkat akses pada endpoint:
+
+| Tingkat | Arti |
+|---|---|
+| Publik | Tidak perlu token |
+| Login | Perlu token, semua role boleh |
+| Petugas/Admin | Perlu token dengan `id_role` 1 atau 2 |
+| Admin | Perlu token dengan `id_role` 1 |
+
+## Daftar endpoint
+
+### Publik
+
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| `POST` | `/register` | Mendaftar akun baru |
+| `POST` | `/login` | Login, mengembalikan token |
+| `GET` | `/buku` | Daftar buku dan stok |
+| `GET` | `/genre` | Daftar genre |
+| `GET` | `/penerbit` | Daftar penerbit |
+| `GET` | `/fasilitas` | Daftar fasilitas |
+| `GET` | `/uploads/<namafile>` | File statis, misalnya gambar buku |
+
+### Perlu login
+
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| `POST` | `/booking` | Membuat booking buku |
+| `GET` | `/histori/riwayat` | Riwayat peminjaman |
+
+### Petugas atau Admin
+
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| `POST` | `/buku/create` | Menambah buku |
+| `POST` | `/genre/create` | Menambah genre |
+| `POST` | `/penerbit/create` | Menambah penerbit |
+| `POST` | `/peminjaman/confirm` | Mengonfirmasi booking menjadi peminjaman |
+| `POST` | `/pengembalian` | Mencatat pengembalian dan menghitung denda |
+
+### Admin
+
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| `POST` | `/petugas/create` | Menambah akun petugas beserta shift |
+| `POST` | `/fasilitas/create` | Menambah fasilitas |
+| `PUT` | `/admin/user/role` | Mengubah role pengguna |
+| `PUT` | `/admin/user/reset-password` | Reset password pengguna |
+
+## Contoh pemakaian
+
+**Login**
+
+```bash
+curl -X POST http://localhost:8080/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"rahasia"}'
+```
+
+```json
+{
+  "message": "Login berhasil",
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "id_user": 1,
+  "username": "admin",
+  "id_role": 1,
+  "nama_shift": "Pagi",
+  "jam_masuk_shift": "08:00:00",
+  "jam_login": "07:52:10",
+  "status_kehadiran": "Tepat Waktu"
+}
+```
+
+**Lihat katalog**
+
+```bash
+curl http://localhost:8080/buku
+```
+
+**Tambah buku** (perlu token petugas atau admin)
+
+```bash
+curl -X POST http://localhost:8080/buku/create \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "judul": "Algoritma dan Pemrograman",
+    "penulis": "Rinaldi Munir",
+    "deskripsi": "Buku algoritma dan struktur data.",
+    "gambar": "algoritma.jpg",
+    "stok": 3
+  }'
+```
+
+**Membuat booking**
+
+```bash
+curl -X POST http://localhost:8080/booking \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id_user":2,"id_buku":1}'
+```
+
+```json
+{
+  "message": "Booking berhasil",
+  "kode_transaksi": "BK-18102026...",
+  "batas_waktu_ambil": "2026-10-19 10:30:00"
+}
+```
+
+**Konfirmasi peminjaman** (perlu token petugas atau admin)
+
+```bash
+curl -X POST http://localhost:8080/peminjaman/confirm \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id_peminjaman":1,"id_petugas":2}'
+```
+
+**Pengembalian** (perlu token petugas atau admin)
+
+```bash
+curl -X POST http://localhost:8080/pengembalian \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id_peminjaman":1,"id_petugas":2}'
+```
+
+```json
+{
+  "message": "Buku berhasil dikembalikan!",
+  "id_peminjaman": 1,
+  "tanggal_pengembalian": "2026-10-25",
+  "denda": 0,
+  "status_transaksi": "dikembalikan"
+}
+```
+
+## Peran pengguna
+
+| `id_role` | Peran | Hak akses |
+|---|---|---|
+| 1 | Admin | Seluruh endpoint, termasuk kelola pengguna |
+| 2 | Petugas | Katalog dan transaksi peminjaman |
+| 3 | Anggota | Katalog, booking, dan riwayat sendiri |
+
+Nilai role didefinisikan di `policy/policy.go`.
+
+## Alur transaksi
+
+```
+Anggota booking  →  Petugas konfirmasi  →  Petugas catat pengembalian
+      ↓                     ↓                          ↓
+ stok berkurang      jatuh tempo 7 hari         stok bertambah
+ batas ambil 24 jam  status: dipinjam           denda dihitung
+ status: booking
+```
+
+Denda dihitung per hari keterlambatan. Tarif dan perhitungannya ada di
+`controllers/pengembalian.go`.
+
+## Rencana pengembangan
+
+- Endpoint ubah dan hapus untuk buku, genre, penerbit, dan fasilitas
+- Unggah gambar buku lewat `multipart/form-data`
+- Pagination dan pencarian pada katalog
+- Endpoint daftar absensi dan daftar pengembalian
+- Pengelolaan data anggota
+- Pembatalan otomatis booking yang melewati batas pengambilan
+- Pengujian otomatis
+
+## Kontributor
+
+- [Hieray-dev](https://github.com/Hieray-dev)

@@ -87,7 +87,25 @@ perpustakaan-api/
 │   └── routes.go           # pendaftaran seluruh rute
 ├── utils/
 │   └── jwt.go              # generate dan validasi token
-└── uploads/                # file statis, disajikan di /uploads/
+├── uploads/                # file statis, disajikan di /uploads/
+└── schema.sql              # struktur tabel database
+```
+
+### Skema database
+
+11 tabel: `user`, `role`, `jadwal_shift`, `absensi`, `buku`, `genre`, `penerbit`, `status`,
+`peminjaman`, `pengembalian`, `fasilitas`.
+
+Relasi utama:
+
+```
+role ──< user >── jadwal_shift
+           │
+           ├──< absensi
+           │
+           └──< peminjaman >── buku >── genre
+                                  ├── penerbit
+                                  └── status
 ```
 
 ## Persiapan
@@ -123,10 +141,11 @@ mysql -u root -p -e "CREATE DATABASE db_perpustakaan;"
 mysql -u root -p db_perpustakaan < schema.sql
 ```
 
-Kalau `schema.sql` belum ada di repo, buat dulu dari database yang sudah jalan:
+`schema.sql` hanya berisi struktur tabel tanpa data. Kalau database sudah berjalan dan kamu
+ingin memperbarui berkasnya:
 
 ```bash
-mysqldump -u root -p --no-data db_perpustakaan > schema.sql
+mysqldump -u root -p --no-data --skip-comments db_perpustakaan > schema.sql
 ```
 
 **5. Buat akun admin pertama**

@@ -9,11 +9,7 @@ import (
 )
 
 func getJWTKey() []byte {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "perpustakaan_ray"
-	}
-	return []byte(secret)
+	return []byte(os.Getenv("JWT_SECRET"))
 }
 
 type Claims struct {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -26,6 +27,10 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 func main() {
 	config.ConnectDB()
+
+	if os.Getenv("JWT_SECRET") == "" {
+		log.Fatal("JWT_SECRET belum diisi di .env, server dihentikan")
+	}
 
 	appRoutes := routes.SetupRoutes()
 

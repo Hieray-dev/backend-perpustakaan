@@ -27,8 +27,9 @@ Antarmuka frontend dikembangkan terpisah; repo ini hanya menyediakan API.
 **Autentikasi dan kehadiran**
 
 - Login dengan JWT (masa berlaku 24 jam), password di-hash dengan bcrypt
-- Pencatatan absensi otomatis saat petugas login, dengan status `Tepat Waktu` atau
-  `Terlambat` dihitung dari jam masuk shift
+- Pencatatan absensi saat petugas login direncanakan dengan status `Tepat Waktu` atau
+  `Terlambat` dihitung dari jam masuk shift — **belum aktif**, query absensi masih perlu
+  diperbaiki (lihat [Rencana pengembangan](#rencana-pengembangan))
 - Akun nonaktif ditolak saat login
 
 **Katalog (akses publik)**
@@ -38,9 +39,11 @@ Antarmuka frontend dikembangkan terpisah; repo ini hanya menyediakan API.
 
 **Transaksi peminjaman**
 
-- Anggota membuat *booking* buku, dengan batas pengambilan 24 jam dan kode transaksi
+- Anggota membuat *booking* buku dengan kode transaksi; batas pengambilan 24 jam baru
+  dihitung, belum ditegakkan otomatis (kolom `batas_waktu` masih bertipe tanggal)
 - Petugas mengonfirmasi booking menjadi peminjaman, jatuh tempo 7 hari
-- Pengembalian buku dengan perhitungan denda otomatis dan pengembalian stok
+- Pengembalian buku dengan perhitungan denda otomatis (Rp2.000 per hari terlambat) dan
+  pengembalian stok
 - Riwayat seluruh transaksi
 
 **Manajemen oleh admin**
@@ -136,35 +139,50 @@ go mod download
 mysql -u root -p -e "CREATE DATABASE db_perpustakaan;"
 ```
 
-**4. Import struktur tabel**
+**4. Import struktur tabel + data dasar**
+
+> **Peringatan:** `schema.sql` dimulai dengan `DROP TABLE IF EXISTS`. Jangan jalankan pada
+> database yang sudah berisi data — tabel lama akan terhapus.
 
 ```bash
 mysql -u root -p db_perpustakaan < schema.sql
 ```
 
-`schema.sql` hanya berisi struktur tabel tanpa data. Kalau database sudah berjalan dan kamu
-ingin memperbarui berkasnya:
+`schema.sql` hanya berisi struktur tabel tanpa data. Tanpa data dasar, `POST /register`
+gagal karena foreign key `user.id_role` → `role.id_role`. Isi minimalnya:
+
+```sql
+INSERT INTO role (id_role, nama_role) VALUES
+  (1, 'Admin'), (2, 'Petugas'), (3, 'Anggota');
+
+INSERT INTO jadwal_shift (id_shift, nama_shift, jam_masuk, jam_keluar) VALUES
+  (1, 'Shift Pagi', '08:00:00', '15:00:00'),
+  (2, 'Shift Siang', '15:00:00', '21:00:00');
+```
+
+Kalau database sudah berjalan dan kamu ingin memperbarui berkas strukturnya:
 
 ```bash
 mysqldump -u root -p --no-data --skip-comments db_perpustakaan > schema.sql
 ```
 
-**5. Buat akun admin pertama**
-
-Tidak ada endpoint publik untuk membuat admin, jadi akun pertama dibuat lewat database.
-Daftarkan akun biasa lewat `POST /register`, lalu ubah rolenya:
-
-```sql
-UPDATE user SET id_role = 1 WHERE username = 'nama_akun';
-```
-
-**6. Siapkan file `.env`**
+**5. Siapkan file `.env`**
 
 ```bash
 cp .env.example .env
 ```
 
-Lalu isi nilainya seperti dijelaskan di bawah.
+Lalu isi nilainya seperti dijelaskan di bawah, dan jalankan server (lihat bagian
+[Menjalankan](#menjalankan)).
+
+**6. Buat akun admin pertama**
+
+Tidak ada endpoint publik untuk membuat admin. Setelah server berjalan, daftarkan akun
+biasa lewat `POST /register`, lalu ubah rolenya lewat database:
+
+```sql
+UPDATE user SET id_role = 1 WHERE username = 'nama_akun';
+```
 
 ## Konfigurasi `.env`
 
@@ -207,6 +225,10 @@ Server running on http://0.0.0.0:8080...
 Server mengikat ke `0.0.0.0`, jadi bisa diakses dari perangkat lain di jaringan yang sama
 lewat alamat IP komputermu.
 
+Jalankan dari **root repo**, karena `.env` dan folder `uploads/` dibaca lewat path relatif.
+CORS masih terbuka untuk semua origin (`*`) — cocok untuk pengembangan, sebaiknya dibatasi
+saat produksi.
+
 Build ke satu file binary:
 
 ```bash
@@ -228,7 +250,7 @@ Authorization: Bearer <token>
 
 Isi token memuat `id_user`, `username`, dan `id_role`. Masa berlakunya 24 jam.
 
-Ada tiga tingkat akses pada endpoint:
+Ada empat tingkat akses pada endpoint:
 
 | Tingkat | Arti |
 |---|---|
@@ -239,11 +261,14 @@ Ada tiga tingkat akses pada endpoint:
 
 ## Daftar endpoint
 
+> Catatan: endpoint daftar mengembalikan `null` (bukan `[]`) bila tabelnya kosong, karena
+> slice hasil query belum diinisialisasi.
+
 ### Publik
 
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| `POST` | `/register` | Mendaftar akun baru (selalu berperan anggota) |
+| `POST` | `/register` | Mendaftar akun baru (selalu berperan anggota); `id_shift` opsional |
 | `POST` | `/login` | Login, mengembalikan token |
 | `GET` | `/buku` | Daftar buku dan stok |
 | `GET` | `/genre` | Daftar genre |
@@ -256,7 +281,7 @@ Ada tiga tingkat akses pada endpoint:
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | `POST` | `/booking` | Membuat booking buku |
-| `GET` | `/histori/riwayat` | Riwayat peminjaman |
+| `GET` | `/histori/riwayat` | Riwayat peminjaman beserta `status_petugas` |
 
 ### Petugas atau Admin
 
@@ -272,7 +297,7 @@ Ada tiga tingkat akses pada endpoint:
 
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| `POST` | `/petugas/create` | Menambah akun petugas beserta shift |
+| `POST` | `/petugas/create` | Membuat akun dengan role dari body (1/2/3) beserta shift |
 | `POST` | `/fasilitas/create` | Menambah fasilitas |
 | `PUT` | `/admin/user/role` | Mengubah role pengguna |
 | `PUT` | `/admin/user/reset-password` | Reset password pengguna |
@@ -327,7 +352,8 @@ curl http://localhost:8080/buku
 
 `penerbit` dan `genre` berisi **nama** hasil penggabungan dengan tabel `penerbit` dan
 `genre`. Pasangan angkanya ada di `id_penerbit` dan `id_genre` — angka itu yang dipakai
-saat menambah atau mengubah buku. `tahun_terbit` bernilai `0` selama belum diisi.
+saat menambah buku (endpoint ubah buku belum tersedia). `tahun_terbit` bernilai `0` selama
+belum diisi.
 
 **Tambah buku** (perlu token petugas atau admin)
 
@@ -349,7 +375,6 @@ curl -X POST http://localhost:8080/buku/create \
 
 `tahun_terbit`, `id_penerbit`, dan `id_genre` boleh dikosongkan. Daftar angka yang sah bisa
 diambil dari `GET /penerbit` dan `GET /genre`.
-```
 
 **Membuat booking**
 
@@ -363,7 +388,7 @@ curl -X POST http://localhost:8080/booking \
 ```json
 {
   "message": "Booking berhasil",
-  "kode_transaksi": "BK-18102026...",
+  "kode_transaksi": "BK-1810063500",
   "batas_waktu_ambil": "2026-10-19 10:30:00"
 }
 ```
@@ -401,8 +426,8 @@ curl -X POST http://localhost:8080/pengembalian \
 | `id_role` | Peran | Hak akses |
 |---|---|---|
 | 1 | Admin | Seluruh endpoint, termasuk kelola pengguna |
-| 2 | Petugas | Katalog dan transaksi peminjaman |
-| 3 | Anggota | Katalog, booking, dan riwayat sendiri |
+| 2 | Petugas | Katalog (baca dan tambah), konfirmasi pinjam, pengembalian |
+| 3 | Anggota | Katalog, booking, dan riwayat (saat ini masih seluruh transaksi; target: hanya milik sendiri) |
 
 Nilai role didefinisikan di `policy/policy.go`.
 
@@ -443,6 +468,7 @@ ALTER TABLE buku ADD COLUMN tahun_terbit int(11) DEFAULT NULL AFTER penulis;
 
 ## Rencana pengembangan
 
+- Perbaikan pencatatan absensi saat login (kolom `status` → `status_kehadiran`, cek error)
 - Endpoint ubah dan hapus untuk buku, genre, penerbit, dan fasilitas
 - Unggah gambar buku lewat `multipart/form-data`
 - Pagination dan pencarian pada katalog

@@ -31,7 +31,7 @@ func SetupRoutes() *http.ServeMux {
 	mux.Handle("/fasilitas/create", middleware.AuthMiddleware(middleware.AdminOnly(http.HandlerFunc(controllers.CreateFasilitasHandler))))
 	mux.Handle("/petugas/create", middleware.AuthMiddleware(middleware.AdminOnly(http.HandlerFunc(controllers.CreatePetugas))))
 	mux.Handle("/admin/user/role", middleware.AuthMiddleware(middleware.AdminOnly(http.HandlerFunc(controllers.UpdateUserRoleHandler))))
-  mux.Handle("/admin/user/reset-password", middleware.AuthMiddleware(middleware.AdminOnly(http.HandlerFunc(controllers.AdminResetPasswordHandler))))
-	
+	mux.Handle("/admin/user/reset-password", middleware.AuthMiddleware(middleware.AdminOnly(http.HandlerFunc(controllers.AdminResetPasswordHandler))))
+
 	return mux
 }

@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"encoding/json"
-	"net/http"
 	"golang.org/x/crypto/bcrypt"
+	"net/http"
 	"perpustakaan-api/config"
 )
 
@@ -13,19 +13,19 @@ type UpdateRoleRequest struct {
 }
 
 type ResetPasswordRequest struct {
-	Username		string `json:"username"`
-	NewPassword	string `json:"new_password"`
+	Username    string `json:"username"`
+	NewPassword string `json:"new_password"`
 }
 
 func UpdateUserRoleHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "PUT" {
 		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
 		return
-}
+	}
 
 	var req UpdateRoleRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {                                     
+	if err != nil {
 		http.Error(w, "Format JSON tidak valid", http.StatusBadRequest)
 		return
 	}

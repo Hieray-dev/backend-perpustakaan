@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"encoding/json"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"perpustakaan-api/config"
 	"perpustakaan-api/models"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func CreatePetugas(w http.ResponseWriter, r *http.Request) {

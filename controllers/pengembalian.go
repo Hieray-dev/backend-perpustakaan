@@ -43,7 +43,7 @@ func PengembalianHandler(w http.ResponseWriter, r *http.Request) {
 
 	waktuSekarang := time.Now()
 	tanggalSekarangStr := waktuSekarang.Format("2006-01-02")
-	
+
 	var tBatas time.Time
 	if len(batasWaktuStr) >= 10 {
 		tBatas, _ = time.Parse("2006-01-02", batasWaktuStr[:10])

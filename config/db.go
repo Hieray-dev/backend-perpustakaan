@@ -14,7 +14,7 @@ var DB *sql.DB
 
 func ConnectDB() {
 	err := godotenv.Load()
-	if err != nil{
+	if err != nil {
 		log.Println("Peringatan: File .env tidak ditemukan")
 	}
 

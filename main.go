@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"perpustakaan-api/config"
 	"perpustakaan-api/routes"
+	"strings"
 )
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -48,7 +48,7 @@ func main() {
 	address := "0.0.0.0" + port
 
 	fmt.Printf("Server running on http://%s...\n", address)
-	
+
 	err := http.ListenAndServe(address, handlerWithCORS)
 	if err != nil {
 		fmt.Println("Gagal menjalankan server:", err)

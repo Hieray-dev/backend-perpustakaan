@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"perpustakaan-api/config"
@@ -25,12 +26,12 @@ func PengembalianHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var batasWaktuStr string
+	var tanggalKembali sql.NullString
 	var idBuku int
 	var statusSaatIni string
 
-	queryCek := `SELECT batas_waktu, id_buku, status FROM peminjaman WHERE id_peminjaman = ?`
-	err = config.DB.QueryRow(queryCek, req.IDPeminjaman).Scan(&batasWaktuStr, &idBuku, &statusSaatIni)
+	queryCek := `SELECT tanggal_kembali, id_buku, status FROM peminjaman WHERE id_peminjaman = ?`
+	err = config.DB.QueryRow(queryCek, req.IDPeminjaman).Scan(&tanggalKembali, &idBuku, &statusSaatIni)
 	if err != nil {
 		http.Error(w, "Data peminjaman tidak ditemukan", http.StatusNotFound)
 		return
@@ -44,15 +45,15 @@ func PengembalianHandler(w http.ResponseWriter, r *http.Request) {
 	waktuSekarang := time.Now()
 	tanggalSekarangStr := waktuSekarang.Format("2006-01-02")
 
-	var tBatas time.Time
-	if len(batasWaktuStr) >= 10 {
-		tBatas, _ = time.Parse("2006-01-02", batasWaktuStr[:10])
+	var tKembali time.Time
+	if tanggalKembali.Valid && len(tanggalKembali.String) >= 10 {
+		tKembali, _ = time.Parse("2006-01-02", tanggalKembali.String[:10])
 	}
 	tSekarang, _ := time.Parse("2006-01-02", tanggalSekarangStr)
 
 	denda := 0
-	if tSekarang.After(tBatas) {
-		selisihHari := int(tSekarang.Sub(tBatas).Hours() / 24)
+	if !tKembali.IsZero() && tSekarang.After(tKembali) {
+		selisihHari := int(tSekarang.Sub(tKembali).Hours() / 24)
 		if selisihHari > 0 {
 			denda = selisihHari * 2000
 		}

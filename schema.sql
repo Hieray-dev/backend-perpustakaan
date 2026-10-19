@@ -35,6 +35,7 @@ CREATE TABLE `buku` (
   `id_buku` int(11) NOT NULL AUTO_INCREMENT,
   `judul` varchar(150) NOT NULL,
   `penulis` varchar(100) DEFAULT NULL,
+  `tahun_terbit` int(11) DEFAULT NULL,
   `deskripsi` text DEFAULT NULL,
   `gambar` varchar(255) DEFAULT NULL,
   `stok` int(11) DEFAULT 1,

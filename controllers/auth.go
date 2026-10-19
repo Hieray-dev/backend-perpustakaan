@@ -17,25 +17,26 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var u models.User
-	err := json.NewDecoder(r.Body).Decode(&u)
+	// /register publik: id_role tidak diterima dari input, akun selalu dibuat sebagai anggota (3)
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+		IDShift  *int   `json:"id_shift"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Format JSON tidak valid", http.StatusBadRequest)
 		return
 	}
 
-	if u.IDRole == 0 {
-		u.IDRole = 3
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Gagal memproses enkripsi password", http.StatusInternalServerError)
 		return
 	}
 
-	query := "INSERT INTO user (username, password, id_role, id_shift, is_active) VALUES (?, ?, ?, ?, 1)"
-	_, err = config.DB.Exec(query, u.Username, string(hashedPassword), u.IDRole, u.IDShift)
+	query := "INSERT INTO user (username, password, id_role, id_shift, is_active) VALUES (?, ?, 3, ?, 1)"
+	_, err = config.DB.Exec(query, req.Username, string(hashedPassword), req.IDShift)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,16 +89,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	passwordValid := (dbUser.Password == req.Password)
-
-	if !passwordValid {
-		errBcrypt := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(req.Password))
-		if errBcrypt == nil {
-			passwordValid = true
-		}
-	}
-
-	if !passwordValid {
+	errBcrypt := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(req.Password))
+	if errBcrypt != nil {
 		http.Error(w, "Password salah!", http.StatusUnauthorized)
 		return
 	}

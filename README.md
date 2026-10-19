@@ -19,6 +19,7 @@ Antarmuka frontend dikembangkan terpisah; repo ini hanya menyediakan API.
 - [Contoh pemakaian](#contoh-pemakaian)
 - [Peran pengguna](#peran-pengguna)
 - [Alur transaksi](#alur-transaksi)
+- [Perubahan terbaru](#perubahan-terbaru)
 - [Rencana pengembangan](#rencana-pengembangan)
 
 ## Fitur
@@ -242,7 +243,7 @@ Ada tiga tingkat akses pada endpoint:
 
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| `POST` | `/register` | Mendaftar akun baru |
+| `POST` | `/register` | Mendaftar akun baru (selalu berperan anggota) |
 | `POST` | `/login` | Login, mengembalikan token |
 | `GET` | `/buku` | Daftar buku dan stok |
 | `GET` | `/genre` | Daftar genre |
@@ -306,6 +307,28 @@ curl -X POST http://localhost:8080/login \
 curl http://localhost:8080/buku
 ```
 
+```json
+[
+  {
+    "id_buku": 1,
+    "judul": "Belajar MySQL & MariaDB untuk Pemula",
+    "penulis": "Dian Sastro",
+    "tahun_terbit": 0,
+    "deskripsi": "Panduan lengkap dasar-dasar MySQL dan MariaDB untuk pemula.",
+    "gambar": "mysql.jpg",
+    "stok": 1,
+    "id_penerbit": 1,
+    "penerbit": "Informatika Bandung",
+    "id_genre": 1,
+    "genre": "Teknologi & Koding"
+  }
+]
+```
+
+`penerbit` dan `genre` berisi **nama** hasil penggabungan dengan tabel `penerbit` dan
+`genre`. Pasangan angkanya ada di `id_penerbit` dan `id_genre` — angka itu yang dipakai
+saat menambah atau mengubah buku. `tahun_terbit` bernilai `0` selama belum diisi.
+
 **Tambah buku** (perlu token petugas atau admin)
 
 ```bash
@@ -315,10 +338,17 @@ curl -X POST http://localhost:8080/buku/create \
   -d '{
     "judul": "Algoritma dan Pemrograman",
     "penulis": "Rinaldi Munir",
+    "tahun_terbit": 2011,
     "deskripsi": "Buku algoritma dan struktur data.",
     "gambar": "algoritma.jpg",
-    "stok": 3
+    "stok": 3,
+    "id_penerbit": 1,
+    "id_genre": 1
   }'
+```
+
+`tahun_terbit`, `id_penerbit`, dan `id_genre` boleh dikosongkan. Daftar angka yang sah bisa
+diambil dari `GET /penerbit` dan `GET /genre`.
 ```
 
 **Membuat booking**
@@ -386,8 +416,30 @@ Anggota booking  →  Petugas konfirmasi  →  Petugas catat pengembalian
  status: booking
 ```
 
-Denda dihitung per hari keterlambatan. Tarif dan perhitungannya ada di
+Denda dihitung per hari keterlambatan, diukur dari **batas kembali** (7 hari sejak buku
+diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitungannya ada di
 `controllers/pengembalian.go`.
+
+## Perubahan terbaru
+
+**19 Oktober 2026**
+
+- Login hanya memakai pemeriksaan `bcrypt`; perbandingan password sebagai teks biasa dihapus
+- `POST /register` selalu membuat akun berperan anggota — `id_role` tidak lagi diterima dari
+  permintaan
+- `JWT_SECRET` wajib diisi: server menolak dijalankan kalau kosong (nilai cadangan di kode
+  sudah dihapus)
+- Denda pengembalian dihitung dari batas kembali (`tanggal_kembali`), bukan batas pengambilan
+  (`batas_waktu`)
+- `GET /buku` mengirim nama penerbit dan genre hasil penggabungan tabel, ditambah
+  `id_penerbit`, `id_genre`, dan `tahun_terbit`; `POST /buku/create` menyimpan kolom itu
+- Kolom `tahun_terbit` ditambahkan pada tabel `buku` (lihat `schema.sql`)
+
+Kalau database sudah ada dari sebelumnya, tambahkan kolom barunya dengan:
+
+```sql
+ALTER TABLE buku ADD COLUMN tahun_terbit int(11) DEFAULT NULL AFTER penulis;
+```
 
 ## Rencana pengembangan
 

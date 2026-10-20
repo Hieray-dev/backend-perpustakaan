@@ -288,6 +288,7 @@ Ada empat tingkat akses pada endpoint:
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | `POST` | `/buku/create` | Menambah buku |
+| `POST` | `/buku/upload` | Mengunggah gambar buku (multipart, maks 2 MB) |
 | `PUT` | `/buku/{id}` | Mengubah sebagian field buku |
 | `DELETE` | `/buku/{id}` | Menghapus buku (ditolak bila masih dibooking/dipinjam) |
 | `POST` | `/genre/create` | Menambah genre |
@@ -455,6 +456,9 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
   kegagalan menyimpan kini dicatat di log (sebelumnya gagal secara senyap)
 - `PUT /buku/{id}` mengubah sebagian field buku; `DELETE /buku/{id}` menghapus buku, ditolak
   bila buku masih dibooking atau dipinjam
+- `POST /buku/upload` menerima gambar (maks 2 MB, jpg/png/webp), memeriksa isi berkas, lalu
+  menyimpannya dengan nama acak di `uploads/` dan mengembalikan URL
+- `uploads/firefly.png` (gambar contoh lama) dihapus dari repo
 
 **19 Oktober 2026**
 
@@ -477,8 +481,7 @@ ALTER TABLE buku ADD COLUMN tahun_terbit int(11) DEFAULT NULL AFTER penulis;
 
 ## Rencana pengembangan
 
-- Endpoint ubah dan hapus untuk buku, genre, penerbit, dan fasilitas
-- Unggah gambar buku lewat `multipart/form-data`
+- Endpoint ubah dan hapus untuk genre, penerbit, dan fasilitas
 - Pagination dan pencarian pada katalog
 - Endpoint daftar absensi dan daftar pengembalian
 - Pengelolaan data anggota

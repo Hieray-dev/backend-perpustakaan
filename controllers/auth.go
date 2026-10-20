@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"perpustakaan-api/config"
 	"perpustakaan-api/models"
@@ -114,8 +115,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			statusKehadiran = "Tepat Waktu"
 		}
 
-		queryAbsensi := "INSERT INTO absensi (id_user, tanggal, status) VALUES (?, ?, ?)"
-		config.DB.Exec(queryAbsensi, dbUser.IDUser, tanggalHariIni, statusKehadiran)
+		queryAbsensi := "INSERT INTO absensi (id_user, tanggal, status_kehadiran) VALUES (?, ?, ?)"
+		_, errAbsensi := config.DB.Exec(queryAbsensi, dbUser.IDUser, tanggalHariIni, statusKehadiran)
+		if errAbsensi != nil {
+			log.Println("Gagal menyimpan absensi:", errAbsensi)
+		}
 	}
 
 	token, err := utils.GenerateToken(dbUser.IDUser, dbUser.Username, dbUser.IDRole)

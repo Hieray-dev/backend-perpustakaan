@@ -288,6 +288,8 @@ Ada empat tingkat akses pada endpoint:
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | `POST` | `/buku/create` | Menambah buku |
+| `PUT` | `/buku/{id}` | Mengubah sebagian field buku |
+| `DELETE` | `/buku/{id}` | Menghapus buku (ditolak bila masih dibooking/dipinjam) |
 | `POST` | `/genre/create` | Menambah genre |
 | `POST` | `/penerbit/create` | Menambah penerbit |
 | `POST` | `/peminjaman/confirm` | Mengonfirmasi booking menjadi peminjaman |
@@ -451,6 +453,8 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 - Pencatatan absensi saat login diperbaiki: kolom `status` diganti `status_kehadiran`, dan
   kegagalan menyimpan kini dicatat di log (sebelumnya gagal secara senyap)
+- `PUT /buku/{id}` mengubah sebagian field buku; `DELETE /buku/{id}` menghapus buku, ditolak
+  bila buku masih dibooking atau dipinjam
 
 **19 Oktober 2026**
 

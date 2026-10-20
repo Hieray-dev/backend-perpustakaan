@@ -1,8 +1,13 @@
 package controllers
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"perpustakaan-api/config"
 	"perpustakaan-api/models"
 	"strconv"
@@ -268,5 +273,101 @@ func DeleteBukuHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Buku berhasil dihapus!",
+	})
+}
+
+const batasUkuranGambar = 2 << 20 // 2 MB
+
+// tipeGambarDiizinkan memetakan tipe isi berkas (hasil deteksi, bukan ekstensi
+// nama) ke ekstensi yang dipakai saat menyimpan.
+var tipeGambarDiizinkan = map[string]string{
+	"image/jpeg": ".jpg",
+	"image/png":  ".png",
+	"image/webp": ".webp",
+}
+
+// UploadGambarBukuHandler menerima multipart/form-data (field "gambar"),
+// menyimpan berkas dengan nama acak di ./uploads, lalu mengembalikan URL-nya.
+// Kolom buku.gambar diisi terpisah lewat PUT /buku/{id}.
+func UploadGambarBukuHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	// batas kasar di level pembacaan; batas pasti dicek lewat header.Size
+	r.Body = http.MaxBytesReader(w, r.Body, batasUkuranGambar+(1<<20))
+	if err := r.ParseMultipartForm(1 << 20); err != nil {
+		http.Error(w, `{"message":"Gambar terlalu besar atau format multipart tidak valid"}`, http.StatusBadRequest)
+		return
+	}
+
+	berkas, header, err := r.FormFile("gambar")
+	if err != nil {
+		http.Error(w, `{"message":"Field gambar wajib diisi"}`, http.StatusBadRequest)
+		return
+	}
+	defer berkas.Close()
+
+	if header.Size > batasUkuranGambar {
+		http.Error(w, `{"message":"Ukuran gambar maksimal 2 MB"}`, http.StatusBadRequest)
+		return
+	}
+
+	ekstensiNama := strings.ToLower(filepath.Ext(header.Filename))
+	if ekstensiNama != ".jpg" && ekstensiNama != ".jpeg" && ekstensiNama != ".png" && ekstensiNama != ".webp" {
+		http.Error(w, `{"message":"Format gambar harus jpg, png, atau webp"}`, http.StatusBadRequest)
+		return
+	}
+
+	// periksa isi berkas, bukan hanya nama. Berkas teks yang dinamai .png tetap ditolak.
+	kepala := make([]byte, 512)
+	jumlahBaca, err := berkas.Read(kepala)
+	if err != nil && err != io.EOF {
+		http.Error(w, `{"message":"Gagal membaca gambar"}`, http.StatusInternalServerError)
+		return
+	}
+
+	ekstensi, diizinkan := tipeGambarDiizinkan[http.DetectContentType(kepala[:jumlahBaca])]
+	if !diizinkan {
+		http.Error(w, `{"message":"Isi berkas bukan gambar jpg, png, atau webp"}`, http.StatusBadRequest)
+		return
+	}
+
+	if _, err := berkas.Seek(0, io.SeekStart); err != nil {
+		http.Error(w, `{"message":"Gagal membaca gambar"}`, http.StatusInternalServerError)
+		return
+	}
+
+	acak := make([]byte, 16)
+	if _, err := rand.Read(acak); err != nil {
+		http.Error(w, `{"message":"Gagal membuat nama berkas"}`, http.StatusInternalServerError)
+		return
+	}
+	namaBerkas := hex.EncodeToString(acak) + ekstensi
+
+	if err := os.MkdirAll("./uploads", 0755); err != nil {
+		http.Error(w, `{"message":"Gagal menyiapkan folder upload"}`, http.StatusInternalServerError)
+		return
+	}
+
+	tujuan := filepath.Join("./uploads", namaBerkas)
+	berkasTujuan, err := os.Create(tujuan)
+	if err != nil {
+		http.Error(w, `{"message":"Gagal menyimpan gambar"}`, http.StatusInternalServerError)
+		return
+	}
+	defer berkasTujuan.Close()
+
+	if _, err := io.Copy(berkasTujuan, berkas); err != nil {
+		os.Remove(tujuan)
+		http.Error(w, `{"message":"Gagal menyimpan gambar"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{
+		"url": "/uploads/" + namaBerkas,
 	})
 }

@@ -23,6 +23,7 @@ func SetupRoutes() *http.ServeMux {
 	mux.Handle("/histori/riwayat", middleware.AuthMiddleware(http.HandlerFunc(controllers.GetRiwayatHandler)))
 
 	mux.Handle("POST /buku/create", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.CreateBukuHandler))))
+	mux.Handle("POST /buku/upload", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.UploadGambarBukuHandler))))
 	mux.Handle("PUT /buku/{id}", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.UpdateBukuHandler))))
 	mux.Handle("DELETE /buku/{id}", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.DeleteBukuHandler))))
 	mux.Handle("/penerbit/create", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.CreatePenerbitHandler))))

@@ -447,6 +447,11 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 ## Perubahan terbaru
 
+**20 Oktober 2026**
+
+- Pencatatan absensi saat login diperbaiki: kolom `status` diganti `status_kehadiran`, dan
+  kegagalan menyimpan kini dicatat di log (sebelumnya gagal secara senyap)
+
 **19 Oktober 2026**
 
 - Login hanya memakai pemeriksaan `bcrypt`; perbandingan password sebagai teks biasa dihapus
@@ -468,7 +473,6 @@ ALTER TABLE buku ADD COLUMN tahun_terbit int(11) DEFAULT NULL AFTER penulis;
 
 ## Rencana pengembangan
 
-- Perbaikan pencatatan absensi saat login (kolom `status` → `status_kehadiran`, cek error)
 - Endpoint ubah dan hapus untuk buku, genre, penerbit, dan fasilitas
 - Unggah gambar buku lewat `multipart/form-data`
 - Pagination dan pencarian pada katalog

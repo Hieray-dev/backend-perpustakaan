@@ -458,6 +458,8 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
   bila buku masih dibooking atau dipinjam
 - `POST /buku/upload` menerima gambar (maks 2 MB, jpg/png/webp), memeriksa isi berkas, lalu
   menyimpannya dengan nama acak di `uploads/` dan mengembalikan URL
+- Validasi tambah/ubah buku: judul wajib, stok tidak negatif, dan `id_penerbit`/`id_genre`/
+  `id_status` harus ada bila diisi; kesalahan input dibalas `400`, bukan `500`
 - `uploads/firefly.png` (gambar contoh lama) dihapus dari repo
 
 **19 Oktober 2026**

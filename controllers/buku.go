@@ -65,6 +65,20 @@ func CreateBukuHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	b.Judul = strings.TrimSpace(b.Judul)
+	if b.Judul == "" {
+		http.Error(w, `{"message":"Judul wajib diisi"}`, http.StatusBadRequest)
+		return
+	}
+	if b.Stok < 0 {
+		http.Error(w, `{"message":"Stok tidak boleh negatif"}`, http.StatusBadRequest)
+		return
+	}
+	if pesan, kode, ok := periksaRelasiBuku(b.IDPenerbit, b.IDGenre, 0); !ok {
+		http.Error(w, `{"message":"`+pesan+`"}`, kode)
+		return
+	}
+
 	// kolom yang boleh kosong: angka 0 dari request dianggap "tidak diisi" lalu disimpan NULL
 	tahun := kosongkanNol(b.TahunTerbit)
 	idPenerbit := kosongkanNol(b.IDPenerbit)
@@ -92,6 +106,48 @@ func kosongkanNol(nilai int) interface{} {
 		return nilai
 	}
 	return nil
+}
+
+// relasiAda memeriksa apakah id yang diisi benar-benar ada di tabelnya.
+// Nama tabel dan kolom selalu ditulis tetap di kode, bukan dari input pengguna.
+func relasiAda(tabel, kolom string, id int) (bool, error) {
+	var jumlah int
+	err := config.DB.QueryRow("SELECT COUNT(*) FROM "+tabel+" WHERE "+kolom+" = ?", id).Scan(&jumlah)
+	return jumlah > 0, err
+}
+
+// periksaRelasiBuku memeriksa id_penerbit, id_genre, dan id_status yang diisi.
+// Angka 0 berarti NULL, jadi tidak diperiksa. Mengembalikan pesan, kode HTTP,
+// dan status lolos.
+func periksaRelasiBuku(idPenerbit, idGenre, idStatus int) (string, int, bool) {
+	if idPenerbit > 0 {
+		ada, err := relasiAda("penerbit", "id_penerbit", idPenerbit)
+		if err != nil {
+			return "Gagal memeriksa penerbit: " + err.Error(), http.StatusInternalServerError, false
+		}
+		if !ada {
+			return "Penerbit tidak ditemukan", http.StatusBadRequest, false
+		}
+	}
+	if idGenre > 0 {
+		ada, err := relasiAda("genre", "id_genre", idGenre)
+		if err != nil {
+			return "Gagal memeriksa genre: " + err.Error(), http.StatusInternalServerError, false
+		}
+		if !ada {
+			return "Genre tidak ditemukan", http.StatusBadRequest, false
+		}
+	}
+	if idStatus > 0 {
+		ada, err := relasiAda("`status`", "id_status", idStatus)
+		if err != nil {
+			return "Gagal memeriksa status: " + err.Error(), http.StatusInternalServerError, false
+		}
+		if !ada {
+			return "Status tidak ditemukan", http.StatusBadRequest, false
+		}
+	}
+	return "", 0, true
 }
 
 // updateBukuRequest memakai pointer supaya bisa membedakan:
@@ -130,9 +186,13 @@ func UpdateBukuHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// penjaga sederhana sebelum validasi lengkap (item 21)
-	if req.Judul != nil && *req.Judul == "" {
-		http.Error(w, `{"message":"Judul tidak boleh kosong"}`, http.StatusBadRequest)
-		return
+	if req.Judul != nil {
+		judul := strings.TrimSpace(*req.Judul)
+		if judul == "" {
+			http.Error(w, `{"message":"Judul tidak boleh kosong"}`, http.StatusBadRequest)
+			return
+		}
+		req.Judul = &judul
 	}
 	if req.Stok != nil && *req.Stok < 0 {
 		http.Error(w, `{"message":"Stok tidak boleh negatif"}`, http.StatusBadRequest)
@@ -152,6 +212,21 @@ func UpdateBukuHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.IDStatus != nil && *req.IDStatus < 0 {
 		http.Error(w, `{"message":"ID status tidak valid"}`, http.StatusBadRequest)
+		return
+	}
+
+	var cekPenerbit, cekGenre, cekStatus int
+	if req.IDPenerbit != nil {
+		cekPenerbit = *req.IDPenerbit
+	}
+	if req.IDGenre != nil {
+		cekGenre = *req.IDGenre
+	}
+	if req.IDStatus != nil {
+		cekStatus = *req.IDStatus
+	}
+	if pesan, kode, ok := periksaRelasiBuku(cekPenerbit, cekGenre, cekStatus); !ok {
+		http.Error(w, `{"message":"`+pesan+`"}`, kode)
 		return
 	}
 

@@ -292,7 +292,11 @@ Ada empat tingkat akses pada endpoint:
 | `PUT` | `/buku/{id}` | Mengubah sebagian field buku |
 | `DELETE` | `/buku/{id}` | Menghapus buku (ditolak bila masih dibooking/dipinjam) |
 | `POST` | `/genre/create` | Menambah genre |
+| `PUT` | `/genre/{id}` | Mengubah nama genre |
+| `DELETE` | `/genre/{id}` | Menghapus genre |
 | `POST` | `/penerbit/create` | Menambah penerbit |
+| `PUT` | `/penerbit/{id}` | Mengubah nama penerbit |
+| `DELETE` | `/penerbit/{id}` | Menghapus penerbit |
 | `POST` | `/peminjaman/confirm` | Mengonfirmasi booking menjadi peminjaman |
 | `GET` | `/pengembalian` | Daftar riwayat pengembalian beserta denda dan data peminjaman |
 | `POST` | `/pengembalian` | Mencatat pengembalian dan menghitung denda |
@@ -305,7 +309,9 @@ Ada empat tingkat akses pada endpoint:
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | `POST` | `/petugas/create` | Membuat akun dengan role dari body (1/2/3) beserta shift |
-| `POST` | `/fasilitas/create` | Menambah fasilitas |
+| `POST` | `/fasilitas/create` | Menambah fasilitas (`nama_fasilitas`, `kondisi`, `jumlah`) |
+| `PUT` | `/fasilitas/{id}` | Mengubah fasilitas (`nama_fasilitas`, `kondisi`, `jumlah`) |
+| `DELETE` | `/fasilitas/{id}` | Menghapus fasilitas |
 | `PUT` | `/admin/user/role` | Mengubah role pengguna |
 | `PUT` | `/admin/user/reset-password` | Reset password pengguna |
 
@@ -456,6 +462,9 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **2 November 2026**
 
+- Endpoint ubah (`PUT`) dan hapus (`DELETE`) untuk master data: `PUT`/`DELETE /penerbit/{id}`,
+  `PUT`/`DELETE /genre/{id}` (petugas/admin), serta `PUT`/`DELETE /fasilitas/{id}` (admin);
+  `GET`/`POST`/`PUT /fasilitas` kini menyertakan kolom `jumlah` sesuai skema dan ERD
 - Validasi `id_role` pada `PUT /admin/user/role` dan `POST /petugas/create`: hanya menerima
   role yang sah (`1` Admin, `2` Petugas, `3` Anggota); nilai di luar itu ditolak `400`
 - `GET /anggota` menampilkan daftar akun anggota (beserta `nama_role` dari tabel `role` dan
@@ -503,7 +512,6 @@ ALTER TABLE buku ADD COLUMN tahun_terbit int(11) DEFAULT NULL AFTER penulis;
 
 ## Rencana pengembangan
 
-- Endpoint ubah dan hapus untuk genre, penerbit, dan fasilitas
 - Pagination dan pencarian pada katalog
 - Pembatalan otomatis booking yang melewati batas pengambilan
 - Pengujian otomatis

@@ -27,9 +27,9 @@ Antarmuka frontend dikembangkan terpisah; repo ini hanya menyediakan API.
 **Autentikasi dan kehadiran**
 
 - Login dengan JWT (masa berlaku 24 jam), password di-hash dengan bcrypt
-- Pencatatan absensi saat petugas login direncanakan dengan status `Tepat Waktu` atau
-  `Terlambat` dihitung dari jam masuk shift — **belum aktif**, query absensi masih perlu
-  diperbaiki (lihat [Rencana pengembangan](#rencana-pengembangan))
+- Pencatatan absensi otomatis saat pengguna yang memiliki shift login dengan status
+  `Tepat Waktu` atau `Terlambat` dihitung dari jam masuk shift, serta riwayat absensi lewat
+  `GET /absensi` (khusus petugas/admin)
 - Akun nonaktif ditolak saat login
 
 **Katalog (akses publik)**
@@ -295,6 +295,7 @@ Ada empat tingkat akses pada endpoint:
 | `POST` | `/penerbit/create` | Menambah penerbit |
 | `POST` | `/peminjaman/confirm` | Mengonfirmasi booking menjadi peminjaman |
 | `POST` | `/pengembalian` | Mencatat pengembalian dan menghitung denda |
+| `GET` | `/absensi` | Daftar riwayat absensi beserta nama pengguna dan shift |
 
 ### Admin
 
@@ -450,6 +451,13 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 ## Perubahan terbaru
 
+**2 November 2026**
+
+- `GET /absensi` menampilkan daftar riwayat absensi beserta `username`, `nama_shift`,
+  `jam_masuk_shift`, `jam_masuk_aktual`, dan `status_kehadiran` (khusus petugas/admin)
+- Pencatatan absensi saat login kini menyimpan `id_shift` dan hanya mencatat satu kali per
+  hari untuk tiap pengguna (login ulang di hari yang sama tidak membuat baris absensi ganda)
+
 **20 Oktober 2026**
 
 - Pencatatan absensi saat login diperbaiki: kolom `status` diganti `status_kehadiran`, dan
@@ -485,7 +493,7 @@ ALTER TABLE buku ADD COLUMN tahun_terbit int(11) DEFAULT NULL AFTER penulis;
 
 - Endpoint ubah dan hapus untuk genre, penerbit, dan fasilitas
 - Pagination dan pencarian pada katalog
-- Endpoint daftar absensi dan daftar pengembalian
+- Endpoint daftar pengembalian
 - Pengelolaan data anggota
 - Pembatalan otomatis booking yang melewati batas pengambilan
 - Pengujian otomatis

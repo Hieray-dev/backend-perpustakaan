@@ -30,6 +30,7 @@ func SetupRoutes() *http.ServeMux {
 	mux.Handle("/genre/create", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.CreateGenreHandler))))
 	mux.Handle("/peminjaman/confirm", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.ConfirmPinjam))))
 	mux.Handle("/pengembalian", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.PengembalianHandler))))
+	mux.Handle("GET /absensi", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.GetAbsensiHandler))))
 
 	mux.Handle("/fasilitas/create", middleware.AuthMiddleware(middleware.AdminOnly(http.HandlerFunc(controllers.CreateFasilitasHandler))))
 	mux.Handle("/petugas/create", middleware.AuthMiddleware(middleware.AdminOnly(http.HandlerFunc(controllers.CreatePetugas))))

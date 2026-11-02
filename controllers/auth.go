@@ -64,11 +64,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var dbUser models.User
+	var idShift int
 	var namaShift, jamMasuk, jamKeluar string
 
 	query := `
 		SELECT 
 			u.id_user, u.username, u.password, u.id_role, u.is_active,
+			COALESCE(u.id_shift, 0),
 			COALESCE(js.nama_shift, 'Tidak Ada Shift'),
 			COALESCE(js.jam_masuk, '00:00:00'),
 			COALESCE(js.jam_keluar, '00:00:00')
@@ -78,7 +80,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = config.DB.QueryRow(query, req.Username).Scan(
 		&dbUser.IDUser, &dbUser.Username, &dbUser.Password, &dbUser.IDRole, &dbUser.IsActive,
-		&namaShift, &jamMasuk, &jamKeluar,
+		&idShift, &namaShift, &jamMasuk, &jamKeluar,
 	)
 	if err != nil {
 		http.Error(w, "Username tidak ditemukan", http.StatusUnauthorized)
@@ -115,10 +117,20 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			statusKehadiran = "Tepat Waktu"
 		}
 
-		queryAbsensi := "INSERT INTO absensi (id_user, tanggal, status_kehadiran) VALUES (?, ?, ?)"
-		_, errAbsensi := config.DB.Exec(queryAbsensi, dbUser.IDUser, tanggalHariIni, statusKehadiran)
-		if errAbsensi != nil {
-			log.Println("Gagal menyimpan absensi:", errAbsensi)
+		var statusTercatat string
+		errCek := config.DB.QueryRow(
+			"SELECT status_kehadiran FROM absensi WHERE id_user = ? AND tanggal = ? LIMIT 1",
+			dbUser.IDUser, tanggalHariIni,
+		).Scan(&statusTercatat)
+
+		if errCek == nil {
+			statusKehadiran = statusTercatat
+		} else {
+			queryAbsensi := "INSERT INTO absensi (id_user, id_shift, tanggal, status_kehadiran) VALUES (?, ?, ?, ?)"
+			_, errAbsensi := config.DB.Exec(queryAbsensi, dbUser.IDUser, idShift, tanggalHariIni, statusKehadiran)
+			if errAbsensi != nil {
+				log.Println("Gagal menyimpan absensi:", errAbsensi)
+			}
 		}
 	}
 
@@ -140,4 +152,46 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		"jam_login":        jamLoginStr,
 		"status_kehadiran": statusKehadiran,
 	})
+}
+
+func GetAbsensiHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	rows, err := config.DB.Query(`
+		SELECT a.id_absensi, a.id_user, u.username,
+		       COALESCE(a.id_shift, u.id_shift, 0), COALESCE(js.nama_shift, ''),
+		       a.tanggal, COALESCE(js.jam_masuk, ''), a.jam_masuk_aktual,
+		       COALESCE(a.jam_keluar_aktual, ''), COALESCE(a.status_kehadiran, '')
+		FROM absensi a
+		JOIN user u ON a.id_user = u.id_user
+		LEFT JOIN jadwal_shift js ON COALESCE(a.id_shift, u.id_shift) = js.id_shift
+		ORDER BY a.id_absensi DESC`)
+	if err != nil {
+		http.Error(w, `{"message":"Gagal mengambil data absensi: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var listAbsensi []models.Absensi
+	for rows.Next() {
+		var a models.Absensi
+		err := rows.Scan(
+			&a.IDAbsensi, &a.IDUser, &a.Username,
+			&a.IDShift, &a.NamaShift,
+			&a.Tanggal, &a.JamMasukShift, &a.JamMasukAktual,
+			&a.JamKeluarAktual, &a.StatusKehadiran,
+		)
+		if err != nil {
+			http.Error(w, `{"message":"Gagal membaca data absensi"}`, http.StatusInternalServerError)
+			return
+		}
+		listAbsensi = append(listAbsensi, a)
+	}
+
+	json.NewEncoder(w).Encode(listAbsensi)
 }

@@ -37,3 +37,13 @@ type UpdateStatusAnggotaRequest struct {
 	IDUser   int  `json:"id_user"`
 	IsActive *int `json:"is_active"`
 }
+
+type Petugas struct {
+	IDUser    int    `json:"id_user"`
+	Username  string `json:"username"`
+	IDRole    int    `json:"id_role"`
+	NamaRole  string `json:"nama_role"`
+	IDShift   int    `json:"id_shift"`
+	NamaShift string `json:"nama_shift"`
+	IsActive  int    `json:"is_active"`
+}

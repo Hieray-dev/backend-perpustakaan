@@ -303,14 +303,16 @@ Ada empat tingkat akses pada endpoint:
 | `GET` | `/absensi` | Daftar riwayat absensi beserta nama pengguna dan shift |
 | `GET` | `/anggota` | Daftar akun anggota beserta status aktif/nonaktif |
 | `PUT` | `/anggota/status` | Mengaktifkan atau menonaktifkan akun anggota (`is_active` 0/1) |
+| `PUT` | `/fasilitas/{id}` | Melaporkan/mengubah kondisi dan jumlah fasilitas |
 
 ### Admin
 
 | Method | Endpoint | Keterangan |
 |---|---|---|
+| `GET` | `/petugas` | Daftar akun petugas beserta shift dan status aktif |
 | `POST` | `/petugas/create` | Membuat akun dengan role dari body (1/2/3) beserta shift |
+| `DELETE` | `/petugas/{id}` | Menghapus akun petugas |
 | `POST` | `/fasilitas/create` | Menambah fasilitas (`nama_fasilitas`, `kondisi`, `jumlah`) |
-| `PUT` | `/fasilitas/{id}` | Mengubah fasilitas (`nama_fasilitas`, `kondisi`, `jumlah`) |
 | `DELETE` | `/fasilitas/{id}` | Menghapus fasilitas |
 | `PUT` | `/admin/user/role` | Mengubah role pengguna |
 | `PUT` | `/admin/user/reset-password` | Reset password pengguna |
@@ -462,6 +464,10 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **2 November 2026**
 
+- Penyelarasan Use Case Diagram dengan backend: `PUT /fasilitas/{id}` dibuka untuk petugas/admin
+  agar petugas dapat melaporkan kondisi fasilitas (sedangkan tambah & hapus fasilitas tetap
+  khusus admin), serta penambahan `GET /petugas` dan `DELETE /petugas/{id}` (khusus admin)
+  untuk melengkapi CRUD Data Petugas
 - Folder `uploads/` dimasukkan ke `.gitignore` agar gambar hasil unggahan tidak ikut ter-commit
   ke repositori (folder dibuat otomatis oleh server saat ada unggahan)
 - Katalog `GET /buku` dan `POST /buku/create` kini menyertakan `id_status` dan `status` (nama

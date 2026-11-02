@@ -8,6 +8,7 @@ import (
 	"perpustakaan-api/config"
 	"perpustakaan-api/models"
 	"perpustakaan-api/policy"
+	"strconv"
 )
 
 func GetAnggotaHandler(w http.ResponseWriter, r *http.Request) {
@@ -128,7 +129,7 @@ func CreatePetugas(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `INSERT INTO user (username, password, id_role, id_shift, is_active) VALUES (?, ?, ?, ?, 1)`
-	_, err = config.DB.Exec(query, req.Username, string(hashedPassword), idRolePetugas, req.IDShift)
+	_, err = config.DB.Exec(query, req.Username, string(hashedPassword), idRolePetugas, kosongkanNol(req.IDShift))
 	if err != nil {
 		http.Error(w, `{"message":"Gagal menambah petugas: `+err.Error()+`"}`, http.StatusInternalServerError)
 		return
@@ -138,5 +139,82 @@ func CreatePetugas(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Petugas berhasil ditambahkan",
+	})
+}
+
+func GetPetugasHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	rows, err := config.DB.Query(`
+		SELECT u.id_user, u.username,
+		       COALESCE(u.id_role, 0), COALESCE(r.nama_role, ''),
+		       COALESCE(u.id_shift, 0), COALESCE(js.nama_shift, ''),
+		       COALESCE(u.is_active, 0)
+		FROM user u
+		LEFT JOIN role r ON u.id_role = r.id_role
+		LEFT JOIN jadwal_shift js ON u.id_shift = js.id_shift
+		WHERE u.id_role = ?
+		ORDER BY u.id_user`, policy.RolePetugas)
+	if err != nil {
+		http.Error(w, `{"message":"Gagal mengambil data petugas: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var listPetugas []models.Petugas
+	for rows.Next() {
+		var p models.Petugas
+		err := rows.Scan(&p.IDUser, &p.Username, &p.IDRole, &p.NamaRole, &p.IDShift, &p.NamaShift, &p.IsActive)
+		if err != nil {
+			http.Error(w, `{"message":"Gagal membaca data petugas"}`, http.StatusInternalServerError)
+			return
+		}
+		listPetugas = append(listPetugas, p)
+	}
+
+	json.NewEncoder(w).Encode(listPetugas)
+}
+
+func DeletePetugasHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "DELETE" {
+		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	idUser, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || idUser <= 0 {
+		http.Error(w, `{"message":"ID petugas tidak valid"}`, http.StatusBadRequest)
+		return
+	}
+
+	var idRole int
+	err = config.DB.QueryRow("SELECT COALESCE(id_role, 0) FROM user WHERE id_user = ?", idUser).Scan(&idRole)
+	if err == sql.ErrNoRows {
+		http.Error(w, `{"message":"Petugas tidak ditemukan"}`, http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, `{"message":"Gagal memeriksa petugas: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+	if idRole != policy.RolePetugas {
+		http.Error(w, `{"message":"User tersebut bukan petugas"}`, http.StatusBadRequest)
+		return
+	}
+
+	_, err = config.DB.Exec("DELETE FROM user WHERE id_user = ? AND id_role = ?", idUser, policy.RolePetugas)
+	if err != nil {
+		http.Error(w, `{"message":"Gagal menghapus petugas: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Petugas berhasil dihapus!",
 	})
 }

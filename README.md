@@ -294,6 +294,7 @@ Ada empat tingkat akses pada endpoint:
 | `POST` | `/genre/create` | Menambah genre |
 | `POST` | `/penerbit/create` | Menambah penerbit |
 | `POST` | `/peminjaman/confirm` | Mengonfirmasi booking menjadi peminjaman |
+| `GET` | `/pengembalian` | Daftar riwayat pengembalian beserta denda dan data peminjaman |
 | `POST` | `/pengembalian` | Mencatat pengembalian dan menghitung denda |
 | `GET` | `/absensi` | Daftar riwayat absensi beserta nama pengguna dan shift |
 
@@ -453,6 +454,8 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **2 November 2026**
 
+- `GET /pengembalian` menampilkan daftar pengembalian beserta `denda`, `kode_transaksi`,
+  `judul_buku`, `peminjam`, `petugas`, dan tanggal terkait (khusus petugas/admin)
 - `GET /absensi` menampilkan daftar riwayat absensi beserta `username`, `nama_shift`,
   `jam_masuk_shift`, `jam_masuk_aktual`, dan `status_kehadiran` (khusus petugas/admin)
 - Pencatatan absensi saat login kini menyimpan `id_shift` dan hanya mencatat satu kali per
@@ -493,7 +496,6 @@ ALTER TABLE buku ADD COLUMN tahun_terbit int(11) DEFAULT NULL AFTER penulis;
 
 - Endpoint ubah dan hapus untuk genre, penerbit, dan fasilitas
 - Pagination dan pencarian pada katalog
-- Endpoint daftar pengembalian
 - Pengelolaan data anggota
 - Pembatalan otomatis booking yang melewati batas pengambilan
 - Pengujian otomatis

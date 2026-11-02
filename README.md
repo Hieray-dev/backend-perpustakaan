@@ -464,6 +464,7 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **2 November 2026**
 
+- Pengurangan stok buku saat `POST /booking` kini dilakukan secara atomik (`UPDATE buku SET stok = stok - 1 WHERE id_buku = ? AND stok > 0` beserta pengecekan `RowsAffected`) dan dibungkus dalam satu transaksi database bersama pencatatan peminjaman agar stok tidak bisa minus
 - Identitas peminjam (`id_peminjam`) pada `POST /booking` serta identitas petugas (`id_petugas`)
   pada `POST /peminjaman/confirm` dan `POST /pengembalian` kini diambil langsung dari klaim token
   JWT (`claims.IDUser`), bukan dari body JSON permintaan

@@ -108,9 +108,20 @@ func CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var stok int
-	err = config.DB.QueryRow("SELECT stok FROM buku WHERE id_buku = ?", req.IDBuku).Scan(&stok)
-	if err != nil || stok <= 0 {
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, `{"message":"Gagal memulai transaksi: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	res, err := tx.Exec("UPDATE buku SET stok = stok - 1 WHERE id_buku = ? AND stok > 0", req.IDBuku)
+	if err != nil {
+		http.Error(w, `{"message":"Gagal memperbarui stok buku: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil || rowsAffected == 0 {
 		http.Error(w, `{"message":"Stok buku habis atau tidak ditemukan"}`, http.StatusBadRequest)
 		return
 	}
@@ -121,13 +132,16 @@ func CreateBooking(w http.ResponseWriter, r *http.Request) {
 	queryInsert := `INSERT INTO peminjaman (kode_transaksi, tipe, tanggal_peminjaman, batas_waktu, status, id_peminjam, id_buku)
 	VALUES (?, 'booking', CURRENT_DATE, ?, 'booking', ?, ?)`
 
-	_, err = config.DB.Exec(queryInsert, kode, batasPengambilan, claims.IDUser, req.IDBuku)
+	_, err = tx.Exec(queryInsert, kode, batasPengambilan, claims.IDUser, req.IDBuku)
 	if err != nil {
 		http.Error(w, `{"message":"Gagal membuat booking: `+err.Error()+`"}`, http.StatusInternalServerError)
 		return
 	}
 
-	config.DB.Exec("UPDATE buku SET stok = stok - 1 WHERE id_buku = ?", req.IDBuku)
+	if err = tx.Commit(); err != nil {
+		http.Error(w, `{"message":"Gagal menyimpan booking: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{

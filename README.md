@@ -454,6 +454,8 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **2 November 2026**
 
+- Proses `POST /pengembalian` kini dibungkus transaksi database (`Begin`/`Commit`/`Rollback`),
+  memeriksa error pembacaan tanggal (`time.Parse`), dan memakai konstanta `tarifDendaPerHari`
 - `GET /pengembalian` menampilkan daftar pengembalian beserta `denda`, `kode_transaksi`,
   `judul_buku`, `peminjam`, `petugas`, dan tanggal terkait (khusus petugas/admin)
 - `GET /absensi` menampilkan daftar riwayat absensi beserta `username`, `nama_shift`,

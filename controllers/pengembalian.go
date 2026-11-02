@@ -132,10 +132,17 @@ func PengembalianHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "Gagal memulai transaksi: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
 	queryInsertPengembalian := `
 		INSERT INTO pengembalian (tanggal_pengembalian, denda, id_peminjaman)
 		VALUES (?, ?, ?)`
-	_, err = config.DB.Exec(queryInsertPengembalian, tanggalSekarangStr, denda, req.IDPeminjaman)
+	_, err = tx.Exec(queryInsertPengembalian, tanggalSekarangStr, denda, req.IDPeminjaman)
 	if err != nil {
 		http.Error(w, "Gagal mencatat pengembalian: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -145,10 +152,23 @@ func PengembalianHandler(w http.ResponseWriter, r *http.Request) {
 		UPDATE peminjaman 
 		SET status = 'dikembalikan', tanggal_kembali = ?, id_petugas = ? 
 		WHERE id_peminjaman = ?`
-	config.DB.Exec(queryUpdatePinjam, tanggalSekarangStr, req.IDPetugas, req.IDPeminjaman)
+	_, err = tx.Exec(queryUpdatePinjam, tanggalSekarangStr, req.IDPetugas, req.IDPeminjaman)
+	if err != nil {
+		http.Error(w, "Gagal memperbarui status peminjaman: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	queryUpdateStok := `UPDATE buku SET stok = stok + 1 WHERE id_buku = ?`
-	config.DB.Exec(queryUpdateStok, idBuku)
+	_, err = tx.Exec(queryUpdateStok, idBuku)
+	if err != nil {
+		http.Error(w, "Gagal memperbarui stok buku: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		http.Error(w, "Gagal menyimpan transaksi pengembalian: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

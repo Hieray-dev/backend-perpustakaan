@@ -281,7 +281,7 @@ Ada empat tingkat akses pada endpoint:
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | `POST` | `/booking` | Membuat booking buku |
-| `GET` | `/histori/riwayat` | Riwayat peminjaman beserta `status_petugas` |
+| `GET` | `/histori/riwayat` | Riwayat peminjaman (khusus milik sendiri bila role anggota; seluruh transaksi bila petugas/admin) |
 
 ### Petugas atau Admin
 
@@ -441,8 +441,8 @@ curl -X POST http://localhost:8080/pengembalian \
 | `id_role` | Peran | Hak akses |
 |---|---|---|
 | 1 | Admin | Seluruh endpoint, termasuk kelola pengguna |
-| 2 | Petugas | Katalog (baca dan tambah), konfirmasi pinjam, pengembalian |
-| 3 | Anggota | Katalog, booking, dan riwayat (saat ini masih seluruh transaksi; target: hanya milik sendiri) |
+| 2 | Petugas | Katalog (baca dan tambah), konfirmasi pinjam, pengembalian, seluruh riwayat |
+| 3 | Anggota | Katalog, booking, dan riwayat peminjaman milik sendiri |
 
 Nilai role didefinisikan di `policy/policy.go`.
 
@@ -464,6 +464,9 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **2 November 2026**
 
+- `GET /histori/riwayat` kini memfilter riwayat berdasarkan pengguna yang login bila berperan
+  anggota (`WHERE p.id_peminjam = ?`), serta menyertakan `id_peminjam` dan `peminjam` (petugas
+  dan admin tetap dapat melihat seluruh riwayat)
 - Penyelarasan Use Case Diagram dengan backend: `PUT /fasilitas/{id}` dibuka untuk petugas/admin
   agar petugas dapat melaporkan kondisi fasilitas (sedangkan tambah & hapus fasilitas tetap
   khusus admin), serta penambahan `GET /petugas` dan `DELETE /petugas/{id}` (khusus admin)

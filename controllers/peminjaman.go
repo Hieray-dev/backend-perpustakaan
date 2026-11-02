@@ -1,10 +1,14 @@
 package controllers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"perpustakaan-api/config"
+	"perpustakaan-api/middleware"
 	"perpustakaan-api/models"
+	"perpustakaan-api/policy"
+	"perpustakaan-api/utils"
 	"time"
 )
 
@@ -14,21 +18,37 @@ func GetRiwayatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := `
+	claims, ok := r.Context().Value(middleware.UserCtxKey).(*utils.Claims)
+	if !ok || claims == nil {
+		http.Error(w, `{"message":"Tidak terautentikasi"}`, http.StatusUnauthorized)
+		return
+	}
+
+	baseQuery := `
 	SELECT
 		p.id_peminjaman,
 		p.kode_transaksi,
 		b.judul,
+		COALESCE(p.id_peminjam, 0),
+		COALESCE(up.username, ''),
 		p.tanggal_peminjaman,
 		p.status,
 		COALESCE(u.username, 'Belum Diverifikasi') AS pustakawan,
 		COALESCE(u.is_active, 0) AS is_active
 	FROM peminjaman p
 	JOIN buku b ON p.id_buku = b.id_buku
-	LEFT JOIN user u ON p.id_petugas = u.id_user
-	ORDER BY p.id_peminjaman DESC`
+	LEFT JOIN user up ON p.id_peminjam = up.id_user
+	LEFT JOIN user u ON p.id_petugas = u.id_user`
 
-	rows, err := config.DB.Query(query)
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if claims.IDRole == policy.RoleAnggota {
+		rows, err = config.DB.Query(baseQuery+" WHERE p.id_peminjam = ? ORDER BY p.id_peminjaman DESC", claims.IDUser)
+	} else {
+		rows, err = config.DB.Query(baseQuery + " ORDER BY p.id_peminjaman DESC")
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -43,6 +63,8 @@ func GetRiwayatHandler(w http.ResponseWriter, r *http.Request) {
 			&rwt.IDPeminjaman,
 			&rwt.KodeTransaksi,
 			&rwt.JudulBuku,
+			&rwt.IDPeminjam,
+			&rwt.Peminjam,
 			&rwt.TanggalPinjam,
 			&rwt.Status,
 			&rwt.Pustakawan,

@@ -12,4 +12,6 @@ type Buku struct {
 	Penerbit    string `json:"penerbit"`
 	IDGenre     int    `json:"id_genre"`
 	Genre       string `json:"genre"`
+	IDStatus    int    `json:"id_status"`
+	Status      string `json:"status"`
 }

@@ -462,6 +462,9 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **2 November 2026**
 
+- Katalog `GET /buku` dan `POST /buku/create` kini menyertakan `id_status` dan `status` (nama
+  status hasil `LEFT JOIN` ke tabel `status`), melengkapi ketiga relasi buku pada ERD
+  (`penerbit`, `genre`, `status`)
 - Endpoint ubah (`PUT`) dan hapus (`DELETE`) untuk master data: `PUT`/`DELETE /penerbit/{id}`,
   `PUT`/`DELETE /genre/{id}` (petugas/admin), serta `PUT`/`DELETE /fasilitas/{id}` (admin);
   `GET`/`POST`/`PUT /fasilitas` kini menyertakan kolom `jumlah` sesuai skema dan ERD

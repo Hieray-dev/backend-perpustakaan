@@ -26,10 +26,12 @@ func GetKatalogBuku(w http.ResponseWriter, r *http.Request) {
 		SELECT b.id_buku, b.judul, COALESCE(b.penulis, ''), COALESCE(b.tahun_terbit, 0),
 		       COALESCE(b.deskripsi, ''), COALESCE(b.gambar, ''), b.stok,
 		       COALESCE(b.id_penerbit, 0), COALESCE(p.nama_penerbit, ''),
-		       COALESCE(b.id_genre, 0), COALESCE(g.nama_genre, '')
+		       COALESCE(b.id_genre, 0), COALESCE(g.nama_genre, ''),
+		       COALESCE(b.id_status, 0), COALESCE(s.nama_status, '')
 		FROM buku b
 		LEFT JOIN penerbit p ON b.id_penerbit = p.id_penerbit
 		LEFT JOIN genre g ON b.id_genre = g.id_genre
+		LEFT JOIN ` + "`status`" + ` s ON b.id_status = s.id_status
 		ORDER BY b.id_buku`)
 	if err != nil {
 		http.Error(w, `{"message":"Gagal mengambil data buku: `+err.Error()+`"}`, http.StatusInternalServerError)
@@ -41,7 +43,7 @@ func GetKatalogBuku(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var b models.Buku
 		err := rows.Scan(&b.IDBuku, &b.Judul, &b.Penulis, &b.TahunTerbit, &b.Deskripsi, &b.Gambar, &b.Stok,
-			&b.IDPenerbit, &b.Penerbit, &b.IDGenre, &b.Genre)
+			&b.IDPenerbit, &b.Penerbit, &b.IDGenre, &b.Genre, &b.IDStatus, &b.Status)
 		if err != nil {
 			http.Error(w, `{"message":"Gagal membaca data buku"}`, http.StatusInternalServerError)
 			return
@@ -74,7 +76,11 @@ func CreateBukuHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"message":"Stok tidak boleh negatif"}`, http.StatusBadRequest)
 		return
 	}
-	if pesan, kode, ok := periksaRelasiBuku(b.IDPenerbit, b.IDGenre, 0); !ok {
+	if b.IDStatus < 0 {
+		http.Error(w, `{"message":"ID status tidak valid"}`, http.StatusBadRequest)
+		return
+	}
+	if pesan, kode, ok := periksaRelasiBuku(b.IDPenerbit, b.IDGenre, b.IDStatus); !ok {
 		http.Error(w, `{"message":"`+pesan+`"}`, kode)
 		return
 	}
@@ -83,9 +89,10 @@ func CreateBukuHandler(w http.ResponseWriter, r *http.Request) {
 	tahun := kosongkanNol(b.TahunTerbit)
 	idPenerbit := kosongkanNol(b.IDPenerbit)
 	idGenre := kosongkanNol(b.IDGenre)
+	idStatus := kosongkanNol(b.IDStatus)
 
-	query := `INSERT INTO buku (judul, penulis, tahun_terbit, deskripsi, gambar, stok, id_penerbit, id_genre) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err = config.DB.Exec(query, b.Judul, b.Penulis, tahun, b.Deskripsi, b.Gambar, b.Stok, idPenerbit, idGenre)
+	query := `INSERT INTO buku (judul, penulis, tahun_terbit, deskripsi, gambar, stok, id_penerbit, id_genre, id_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err = config.DB.Exec(query, b.Judul, b.Penulis, tahun, b.Deskripsi, b.Gambar, b.Stok, idPenerbit, idGenre, idStatus)
 	if err != nil {
 		http.Error(w, `{"message":"Gagal menambah buku: `+err.Error()+`"}`, http.StatusInternalServerError)
 		return

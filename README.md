@@ -77,7 +77,7 @@ perpustakaan-api/
 │   ├── peminjaman.go       # booking, konfirmasi, riwayat
 │   ├── pengembalian.go     # pengembalian dan denda
 │   ├── admin.go            # ubah role, reset password
-│   ├── user.go             # tambah petugas
+│   ├── user.go             # tambah petugas, kelola anggota
 │   ├── fasilitas.go
 │   ├── genre.go
 │   └── penerbit.go
@@ -297,6 +297,8 @@ Ada empat tingkat akses pada endpoint:
 | `GET` | `/pengembalian` | Daftar riwayat pengembalian beserta denda dan data peminjaman |
 | `POST` | `/pengembalian` | Mencatat pengembalian dan menghitung denda |
 | `GET` | `/absensi` | Daftar riwayat absensi beserta nama pengguna dan shift |
+| `GET` | `/anggota` | Daftar akun anggota beserta status aktif/nonaktif |
+| `PUT` | `/anggota/status` | Mengaktifkan atau menonaktifkan akun anggota (`is_active` 0/1) |
 
 ### Admin
 
@@ -454,6 +456,9 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **2 November 2026**
 
+- `GET /anggota` menampilkan daftar akun anggota (beserta `nama_role` dari tabel `role` dan
+  `is_active`, tanpa membocorkan password); `PUT /anggota/status` mengubah status aktif/
+  nonaktif anggota (`is_active` `0` atau `1`, khusus petugas/admin)
 - Proses `POST /pengembalian` kini dibungkus transaksi database (`Begin`/`Commit`/`Rollback`),
   memeriksa error pembacaan tanggal (`time.Parse`), dan memakai konstanta `tarifDendaPerHari`
 - `GET /pengembalian` menampilkan daftar pengembalian beserta `denda`, `kode_transaksi`,
@@ -498,7 +503,6 @@ ALTER TABLE buku ADD COLUMN tahun_terbit int(11) DEFAULT NULL AFTER penulis;
 
 - Endpoint ubah dan hapus untuk genre, penerbit, dan fasilitas
 - Pagination dan pencarian pada katalog
-- Pengelolaan data anggota
 - Pembatalan otomatis booking yang melewati batas pengambilan
 - Pengujian otomatis
 

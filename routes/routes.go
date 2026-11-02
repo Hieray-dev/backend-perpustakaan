@@ -32,6 +32,8 @@ func SetupRoutes() *http.ServeMux {
 	mux.Handle("GET /pengembalian", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.GetPengembalianHandler))))
 	mux.Handle("POST /pengembalian", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.PengembalianHandler))))
 	mux.Handle("GET /absensi", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.GetAbsensiHandler))))
+	mux.Handle("GET /anggota", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.GetAnggotaHandler))))
+	mux.Handle("PUT /anggota/status", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.UpdateStatusAnggotaHandler))))
 
 	mux.Handle("/fasilitas/create", middleware.AuthMiddleware(middleware.AdminOnly(http.HandlerFunc(controllers.CreateFasilitasHandler))))
 	mux.Handle("/petugas/create", middleware.AuthMiddleware(middleware.AdminOnly(http.HandlerFunc(controllers.CreatePetugas))))

@@ -5,6 +5,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"perpustakaan-api/config"
+	"perpustakaan-api/policy"
 )
 
 type UpdateRoleRequest struct {
@@ -27,6 +28,11 @@ func UpdateUserRoleHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Format JSON tidak valid", http.StatusBadRequest)
+		return
+	}
+
+	if req.IDRole != policy.RoleAdmin && req.IDRole != policy.RolePetugas && req.IDRole != policy.RoleAnggota {
+		http.Error(w, `{"message":"Role tidak valid (harus 1=Admin, 2=Petugas, atau 3=Anggota)"}`, http.StatusBadRequest)
 		return
 	}
 

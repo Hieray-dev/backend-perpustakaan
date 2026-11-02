@@ -112,15 +112,19 @@ func CreatePetugas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	idRolePetugas := policy.RolePetugas
+	if req.IDRole != 0 {
+		idRolePetugas = req.IDRole
+	}
+	if idRolePetugas != policy.RoleAdmin && idRolePetugas != policy.RolePetugas && idRolePetugas != policy.RoleAnggota {
+		http.Error(w, `{"message":"Role tidak valid (harus 1=Admin, 2=Petugas, atau 3=Anggota)"}`, http.StatusBadRequest)
+		return
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, `{"message":"Gagal mengenkripsi password"}`, http.StatusInternalServerError)
 		return
-	}
-
-	idRolePetugas := 2
-	if req.IDRole != 0 {
-		idRolePetugas = req.IDRole
 	}
 
 	query := `INSERT INTO user (username, password, id_role, id_shift, is_active) VALUES (?, ?, ?, ?, 1)`

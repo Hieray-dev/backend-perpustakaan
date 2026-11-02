@@ -456,6 +456,8 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **2 November 2026**
 
+- Validasi `id_role` pada `PUT /admin/user/role` dan `POST /petugas/create`: hanya menerima
+  role yang sah (`1` Admin, `2` Petugas, `3` Anggota); nilai di luar itu ditolak `400`
 - `GET /anggota` menampilkan daftar akun anggota (beserta `nama_role` dari tabel `role` dan
   `is_active`, tanpa membocorkan password); `PUT /anggota/status` mengubah status aktif/
   nonaktif anggota (`is_active` `0` atau `1`, khusus petugas/admin)

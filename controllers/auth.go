@@ -83,18 +83,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		&idShift, &namaShift, &jamMasuk, &jamKeluar,
 	)
 	if err != nil {
-		http.Error(w, "Username tidak ditemukan", http.StatusUnauthorized)
-		return
-	}
-
-	if dbUser.IsActive == 0 {
-		http.Error(w, "Akun anda telah dinonaktifkan oleh admin!", http.StatusForbidden)
+		http.Error(w, "Username atau password salah", http.StatusUnauthorized)
 		return
 	}
 
 	errBcrypt := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(req.Password))
 	if errBcrypt != nil {
-		http.Error(w, "Password salah!", http.StatusUnauthorized)
+		http.Error(w, "Username atau password salah", http.StatusUnauthorized)
+		return
+	}
+
+	if dbUser.IsActive == 0 {
+		http.Error(w, "Akun anda telah dinonaktifkan oleh admin!", http.StatusForbidden)
 		return
 	}
 

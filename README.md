@@ -269,7 +269,7 @@ Ada empat tingkat akses pada endpoint:
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | `POST` | `/register` | Mendaftar akun baru (selalu berperan anggota); `id_shift` opsional |
-| `POST` | `/login` | Login, mengembalikan token |
+| `POST` | `/login` | Login, mengembalikan token (`401` bila username/password salah, `403` bila akun nonaktif) |
 | `GET` | `/buku` | Daftar buku dan stok |
 | `GET` | `/genre` | Daftar genre |
 | `GET` | `/penerbit` | Daftar penerbit |

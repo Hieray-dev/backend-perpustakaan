@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"perpustakaan-api/config"
+	"perpustakaan-api/middleware"
+	"perpustakaan-api/utils"
 	"time"
 )
 
@@ -12,7 +14,6 @@ const tarifDendaPerHari = 2000
 
 type PengembalianRequest struct {
 	IDPeminjaman int `json:"id_peminjaman"`
-	IDPetugas    int `json:"id_petugas"`
 }
 
 type Pengembalian struct {
@@ -77,6 +78,12 @@ func GetPengembalianHandler(w http.ResponseWriter, r *http.Request) {
 func PengembalianHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
+		return
+	}
+
+	claims, ok := r.Context().Value(middleware.UserCtxKey).(*utils.Claims)
+	if !ok || claims == nil {
+		http.Error(w, "Tidak terautentikasi", http.StatusUnauthorized)
 		return
 	}
 
@@ -152,7 +159,7 @@ func PengembalianHandler(w http.ResponseWriter, r *http.Request) {
 		UPDATE peminjaman 
 		SET status = 'dikembalikan', tanggal_kembali = ?, id_petugas = ? 
 		WHERE id_peminjaman = ?`
-	_, err = tx.Exec(queryUpdatePinjam, tanggalSekarangStr, req.IDPetugas, req.IDPeminjaman)
+	_, err = tx.Exec(queryUpdatePinjam, tanggalSekarangStr, claims.IDUser, req.IDPeminjaman)
 	if err != nil {
 		http.Error(w, "Gagal memperbarui status peminjaman: "+err.Error(), http.StatusInternalServerError)
 		return

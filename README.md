@@ -397,7 +397,7 @@ diambil dari `GET /penerbit` dan `GET /genre`.
 curl -X POST http://localhost:8080/booking \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $TOKEN" \
-  -d '{"id_user":2,"id_buku":1}'
+  -d '{"id_buku":1}'
 ```
 
 ```json
@@ -414,7 +414,7 @@ curl -X POST http://localhost:8080/booking \
 curl -X POST http://localhost:8080/peminjaman/confirm \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $TOKEN" \
-  -d '{"id_peminjaman":1,"id_petugas":2}'
+  -d '{"id_peminjaman":1}'
 ```
 
 **Pengembalian** (perlu token petugas atau admin)
@@ -423,7 +423,7 @@ curl -X POST http://localhost:8080/peminjaman/confirm \
 curl -X POST http://localhost:8080/pengembalian \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $TOKEN" \
-  -d '{"id_peminjaman":1,"id_petugas":2}'
+  -d '{"id_peminjaman":1}'
 ```
 
 ```json
@@ -464,6 +464,12 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **2 November 2026**
 
+- Identitas peminjam (`id_peminjam`) pada `POST /booking` serta identitas petugas (`id_petugas`)
+  pada `POST /peminjaman/confirm` dan `POST /pengembalian` kini diambil langsung dari klaim token
+  JWT (`claims.IDUser`), bukan dari body JSON permintaan
+- Pesan gagal login pada `POST /login` disamakan menjadi `"Username atau password salah"` (`401`)
+  dan pengecekan akun nonaktif dipindahkan ke sesudah verifikasi password untuk mencegah
+  penebakan username terdaftar (*user enumeration*)
 - `GET /histori/riwayat` kini memfilter riwayat berdasarkan pengguna yang login bila berperan
   anggota (`WHERE p.id_peminjam = ?`), serta menyertakan `id_peminjam` dan `peminjam` (petugas
   dan admin tetap dapat melihat seluruh riwayat)

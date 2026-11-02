@@ -13,11 +13,9 @@ type Riwayat struct {
 }
 
 type BookingRequest struct {
-	IDUser int `json:"id_user"`
 	IDBuku int `json:"id_buku"`
 }
 
 type ConfirmPinjamRequest struct {
 	IDPeminjaman int `json:"id_peminjaman"`
-	IDPetugas    int `json:"id_petugas"`
 }

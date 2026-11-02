@@ -95,6 +95,12 @@ func CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims, ok := r.Context().Value(middleware.UserCtxKey).(*utils.Claims)
+	if !ok || claims == nil {
+		http.Error(w, `{"message":"Tidak terautentikasi"}`, http.StatusUnauthorized)
+		return
+	}
+
 	var req models.BookingRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -115,7 +121,7 @@ func CreateBooking(w http.ResponseWriter, r *http.Request) {
 	queryInsert := `INSERT INTO peminjaman (kode_transaksi, tipe, tanggal_peminjaman, batas_waktu, status, id_peminjam, id_buku)
 	VALUES (?, 'booking', CURRENT_DATE, ?, 'booking', ?, ?)`
 
-	_, err = config.DB.Exec(queryInsert, kode, batasPengambilan, req.IDUser, req.IDBuku)
+	_, err = config.DB.Exec(queryInsert, kode, batasPengambilan, claims.IDUser, req.IDBuku)
 	if err != nil {
 		http.Error(w, `{"message":"Gagal membuat booking: `+err.Error()+`"}`, http.StatusInternalServerError)
 		return
@@ -137,6 +143,12 @@ func ConfirmPinjam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims, ok := r.Context().Value(middleware.UserCtxKey).(*utils.Claims)
+	if !ok || claims == nil {
+		http.Error(w, `{"message":"Tidak terautentikasi"}`, http.StatusUnauthorized)
+		return
+	}
+
 	var req models.ConfirmPinjamRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -154,7 +166,7 @@ func ConfirmPinjam(w http.ResponseWriter, r *http.Request) {
 						id_petugas = ?
 					WHERE id_peminjaman = ? AND status = 'booking'`
 
-	res, err := config.DB.Exec(queryUpdate, tanggalPinjam, tanggalKembali, req.IDPetugas, req.IDPeminjaman)
+	res, err := config.DB.Exec(queryUpdate, tanggalPinjam, tanggalKembali, claims.IDUser, req.IDPeminjaman)
 	if err != nil {
 		http.Error(w, `{"message": "Gagal memproses peminjaman: `+err.Error()+`"}`, http.StatusInternalServerError)
 		return

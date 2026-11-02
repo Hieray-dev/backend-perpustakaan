@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const tarifDendaPerHari = 2000
+
 type PengembalianRequest struct {
 	IDPeminjaman int `json:"id_peminjaman"`
 	IDPetugas    int `json:"id_petugas"`
@@ -114,7 +116,7 @@ func PengembalianHandler(w http.ResponseWriter, r *http.Request) {
 	if !tKembali.IsZero() && tSekarang.After(tKembali) {
 		selisihHari := int(tSekarang.Sub(tKembali).Hours() / 24)
 		if selisihHari > 0 {
-			denda = selisihHari * 2000
+			denda = selisihHari * tarifDendaPerHari
 		}
 	}
 

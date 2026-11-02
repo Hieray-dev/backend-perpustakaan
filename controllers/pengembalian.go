@@ -107,10 +107,22 @@ func PengembalianHandler(w http.ResponseWriter, r *http.Request) {
 	tanggalSekarangStr := waktuSekarang.Format("2006-01-02")
 
 	var tKembali time.Time
-	if tanggalKembali.Valid && len(tanggalKembali.String) >= 10 {
-		tKembali, _ = time.Parse("2006-01-02", tanggalKembali.String[:10])
+	if tanggalKembali.Valid && tanggalKembali.String != "" {
+		if len(tanggalKembali.String) < 10 {
+			http.Error(w, "Format tanggal kembali tidak valid", http.StatusInternalServerError)
+			return
+		}
+		tKembali, err = time.Parse("2006-01-02", tanggalKembali.String[:10])
+		if err != nil {
+			http.Error(w, "Format tanggal kembali tidak valid", http.StatusInternalServerError)
+			return
+		}
 	}
-	tSekarang, _ := time.Parse("2006-01-02", tanggalSekarangStr)
+	tSekarang, err := time.Parse("2006-01-02", tanggalSekarangStr)
+	if err != nil {
+		http.Error(w, "Gagal memproses tanggal pengembalian", http.StatusInternalServerError)
+		return
+	}
 
 	denda := 0
 	if !tKembali.IsZero() && tSekarang.After(tKembali) {

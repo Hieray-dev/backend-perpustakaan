@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"perpustakaan-api/config"
 	"perpustakaan-api/middleware"
@@ -126,7 +128,9 @@ func CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kode := "BK-" + time.Now().Format("0201150405")
+	var acak [2]byte
+	_, _ = rand.Read(acak[:])
+	kode := fmt.Sprintf("BK-%s-%X", time.Now().Format("0201150405"), acak[:])
 	batasPengambilan := time.Now().Add(24 * time.Hour).Format("2006-01-02 15:04:05")
 
 	queryInsert := `INSERT INTO peminjaman (kode_transaksi, tipe, tanggal_peminjaman, batas_waktu, status, id_peminjam, id_buku)

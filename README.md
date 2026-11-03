@@ -403,7 +403,7 @@ curl -X POST http://localhost:8080/booking \
 ```json
 {
   "message": "Booking berhasil",
-  "kode_transaksi": "BK-1810063500",
+  "kode_transaksi": "BK-0311075544-089B",
   "batas_waktu_ambil": "2026-10-19 10:30:00"
 }
 ```
@@ -461,6 +461,12 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 `controllers/pengembalian.go`.
 
 ## Perubahan terbaru
+
+**3 November 2026**
+
+- Kode transaksi booking (`kode_transaksi`) pada `POST /booking` kini ditambahkan 4 karakter
+  heksadesimal acak (`crypto/rand`, format `BK-DDMMHHMMSS-XXXX`, 18 karakter) agar tidak
+  bentrok (`UNIQUE KEY`) bila ada beberapa permintaan booking di detik yang sama
 
 **2 November 2026**
 

@@ -334,6 +334,7 @@ curl -X POST http://localhost:8080/login \
   "id_user": 1,
   "username": "admin",
   "id_role": 1,
+  "nama_role": "Admin",
   "nama_shift": "Pagi",
   "jam_masuk_shift": "08:00:00",
   "jam_login": "07:52:10",
@@ -464,6 +465,8 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **3 November 2026**
 
+- Response `POST /login` kini menyertakan `"nama_role"` (`"Admin"`, `"Petugas"`, atau `"Anggota"`)
+  hasil `LEFT JOIN` ke tabel `role` sehingga frontend tidak perlu menebak dari angka `id_role`
 - Kegagalan pembacaan baris (`rows.Scan`) pada `GET /histori/riwayat` kini dicatat di log server
   sebelum melanjutkan ke baris berikutnya (sebelumnya dilewati secara senyap)
 - Kode transaksi booking (`kode_transaksi`) pada `POST /booking` kini ditambahkan 4 karakter

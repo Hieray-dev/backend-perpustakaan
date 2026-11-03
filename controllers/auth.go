@@ -65,21 +65,22 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var dbUser models.User
 	var idShift int
-	var namaShift, jamMasuk, jamKeluar string
+	var namaRole, namaShift, jamMasuk, jamKeluar string
 
 	query := `
 		SELECT 
-			u.id_user, u.username, u.password, u.id_role, u.is_active,
+			u.id_user, u.username, u.password, u.id_role, COALESCE(r.nama_role, ''), u.is_active,
 			COALESCE(u.id_shift, 0),
 			COALESCE(js.nama_shift, 'Tidak Ada Shift'),
 			COALESCE(js.jam_masuk, '00:00:00'),
 			COALESCE(js.jam_keluar, '00:00:00')
 		FROM user u
+		LEFT JOIN role r ON u.id_role = r.id_role
 		LEFT JOIN jadwal_shift js ON u.id_shift = js.id_shift
 		WHERE u.username = ?`
 
 	err = config.DB.QueryRow(query, req.Username).Scan(
-		&dbUser.IDUser, &dbUser.Username, &dbUser.Password, &dbUser.IDRole, &dbUser.IsActive,
+		&dbUser.IDUser, &dbUser.Username, &dbUser.Password, &dbUser.IDRole, &namaRole, &dbUser.IsActive,
 		&idShift, &namaShift, &jamMasuk, &jamKeluar,
 	)
 	if err != nil {
@@ -147,6 +148,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		"id_user":          dbUser.IDUser,
 		"username":         dbUser.Username,
 		"id_role":          dbUser.IDRole,
+		"nama_role":        namaRole,
 		"nama_shift":       namaShift,
 		"jam_masuk_shift":  jamMasuk,
 		"jam_login":        jamLoginStr,

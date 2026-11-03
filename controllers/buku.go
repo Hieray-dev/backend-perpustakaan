@@ -22,7 +22,7 @@ func GetKatalogBuku(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	rows, err := config.DB.Query(`
+	queryStr := `
 		SELECT b.id_buku, b.judul, COALESCE(b.penulis, ''), COALESCE(b.tahun_terbit, 0),
 		       COALESCE(b.deskripsi, ''), COALESCE(b.gambar, ''), b.stok,
 		       COALESCE(b.id_penerbit, 0), COALESCE(p.nama_penerbit, ''),
@@ -31,8 +31,56 @@ func GetKatalogBuku(w http.ResponseWriter, r *http.Request) {
 		FROM buku b
 		LEFT JOIN penerbit p ON b.id_penerbit = p.id_penerbit
 		LEFT JOIN genre g ON b.id_genre = g.id_genre
-		LEFT JOIN ` + "`status`" + ` s ON b.id_status = s.id_status
-		ORDER BY b.id_buku`)
+		LEFT JOIN ` + "`status`" + ` s ON b.id_status = s.id_status`
+
+	var conditions []string
+	var args []interface{}
+
+	search := strings.TrimSpace(r.URL.Query().Get("q"))
+	if search == "" {
+		search = strings.TrimSpace(r.URL.Query().Get("search"))
+	}
+	if search != "" {
+		conditions = append(conditions, "(b.judul LIKE ? OR b.penulis LIKE ?)")
+		searchTerm := "%" + search + "%"
+		args = append(args, searchTerm, searchTerm)
+	}
+
+	if len(conditions) > 0 {
+		queryStr += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	queryStr += " ORDER BY b.id_buku"
+
+	limitStr := r.URL.Query().Get("limit")
+	if limitStr != "" {
+		limit, err := strconv.Atoi(limitStr)
+		if err == nil && limit > 0 {
+			queryStr += " LIMIT ?"
+			args = append(args, limit)
+
+			pageStr := r.URL.Query().Get("page")
+			offsetStr := r.URL.Query().Get("offset")
+
+			offset := 0
+			if offsetStr != "" {
+				if off, err := strconv.Atoi(offsetStr); err == nil && off >= 0 {
+					offset = off
+				}
+			} else if pageStr != "" {
+				if page, err := strconv.Atoi(pageStr); err == nil && page > 1 {
+					offset = (page - 1) * limit
+				}
+			}
+
+			if offset > 0 {
+				queryStr += " OFFSET ?"
+				args = append(args, offset)
+			}
+		}
+	}
+
+	rows, err := config.DB.Query(queryStr, args...)
 	if err != nil {
 		http.Error(w, `{"message":"Gagal mengambil data buku: `+err.Error()+`"}`, http.StatusInternalServerError)
 		return

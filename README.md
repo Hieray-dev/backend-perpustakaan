@@ -271,7 +271,7 @@ Ada empat tingkat akses pada endpoint:
 |---|---|---|
 | `POST` | `/register` | Mendaftar akun baru (selalu berperan anggota); `id_shift` opsional |
 | `POST` | `/login` | Login, mengembalikan token (`401` bila username/password salah, `403` bila akun nonaktif) |
-| `GET` | `/buku` | Daftar buku dan stok |
+| `GET` | `/buku` | Daftar buku dan stok (mendukung query `q` / `search`, `limit`, `page`, `offset`) |
 | `GET` | `/genre` | Daftar genre |
 | `GET` | `/penerbit` | Daftar penerbit |
 | `GET` | `/fasilitas` | Daftar fasilitas |
@@ -466,6 +466,7 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **3 November 2026**
 
+- Endpoint `GET /buku` kini mendukung filter pencarian judul/penulis (`?q=` atau `?search=`) serta pagination (`?limit=`, `?page=`, `?offset=`)
 - CORS middleware pada `main.go` kini dapat dikonfigurasi melalui variabel lingkungan `CORS_ALLOWED_ORIGIN` (default `*` jika tidak diset)
 - Endpoint `PUT /admin/user/reset-password` kini mendukung identifikasi pengguna melalui `id_user` (seragam dengan `PUT /admin/user/role`) selain `username`
 - Konfigurasi *connection pool* MySQL diterapkan pada `config/db.go` (`SetMaxOpenConns(25)`, `SetMaxIdleConns(10)`, `SetConnMaxLifetime`, `SetConnMaxIdleTime`) untuk efisiensi dan mencegah koneksi terputus

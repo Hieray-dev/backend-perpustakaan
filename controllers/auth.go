@@ -13,11 +13,6 @@ import (
 )
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	// /register publik: id_role tidak diterima dari input, akun selalu dibuat sebagai anggota (3)
 	var req struct {
 		Username string `json:"username"`
@@ -51,11 +46,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req models.User
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -157,11 +147,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAbsensiHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 
 	rows, err := config.DB.Query(`

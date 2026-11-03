@@ -22,11 +22,6 @@ type updateFasilitasRequest struct {
 }
 
 func GetFasilitasHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	rows, err := config.DB.Query("SELECT id_fasilitas, nama_fasilitas, COALESCE(kondisi, ''), COALESCE(jumlah, 1) FROM fasilitas")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -49,11 +44,6 @@ func GetFasilitasHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateFasilitasHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var f Fasilitas
 	err := json.NewDecoder(r.Body).Decode(&f)
 	if err != nil {
@@ -93,11 +83,6 @@ func CreateFasilitasHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateFasilitasHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "PUT" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	idFasilitas, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil || idFasilitas <= 0 {
 		http.Error(w, `{"message":"ID fasilitas tidak valid"}`, http.StatusBadRequest)
@@ -171,11 +156,6 @@ func UpdateFasilitasHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteFasilitasHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "DELETE" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	idFasilitas, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil || idFasilitas <= 0 {
 		http.Error(w, `{"message":"ID fasilitas tidak valid"}`, http.StatusBadRequest)

@@ -20,11 +20,6 @@ type ResetPasswordRequest struct {
 }
 
 func UpdateUserRoleHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "PUT" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req UpdateRoleRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -57,11 +52,6 @@ func UpdateUserRoleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func AdminResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "PUT" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req ResetPasswordRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil || req.NewPassword == "" || (req.IDUser <= 0 && req.Username == "") {

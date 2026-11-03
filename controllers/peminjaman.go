@@ -16,11 +16,6 @@ import (
 )
 
 func GetRiwayatHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	claims, ok := r.Context().Value(middleware.UserCtxKey).(*utils.Claims)
 	if !ok || claims == nil {
 		http.Error(w, `{"message":"Tidak terautentikasi"}`, http.StatusUnauthorized)
@@ -95,11 +90,6 @@ func GetRiwayatHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateBooking(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	claims, ok := r.Context().Value(middleware.UserCtxKey).(*utils.Claims)
 	if !ok || claims == nil {
 		http.Error(w, `{"message":"Tidak terautentikasi"}`, http.StatusUnauthorized)
@@ -159,11 +149,6 @@ func CreateBooking(w http.ResponseWriter, r *http.Request) {
 }
 
 func ConfirmPinjam(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	claims, ok := r.Context().Value(middleware.UserCtxKey).(*utils.Claims)
 	if !ok || claims == nil {
 		http.Error(w, `{"message":"Tidak terautentikasi"}`, http.StatusUnauthorized)

@@ -14,11 +14,6 @@ type Genre struct {
 }
 
 func GetGenreHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	rows, err := config.DB.Query("SELECT id_genre, nama_genre FROM genre")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -41,11 +36,6 @@ func GetGenreHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateGenreHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var g Genre
 	err := json.NewDecoder(r.Body).Decode(&g)
 	if err != nil {
@@ -74,11 +64,6 @@ func CreateGenreHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateGenreHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "PUT" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	idGenre, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil || idGenre <= 0 {
 		http.Error(w, `{"message":"ID genre tidak valid"}`, http.StatusBadRequest)
@@ -121,11 +106,6 @@ func UpdateGenreHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteGenreHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "DELETE" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	idGenre, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil || idGenre <= 0 {
 		http.Error(w, `{"message":"ID genre tidak valid"}`, http.StatusBadRequest)

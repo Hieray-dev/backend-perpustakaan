@@ -12,11 +12,6 @@ import (
 )
 
 func GetAnggotaHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 
 	rows, err := config.DB.Query(`
@@ -48,11 +43,6 @@ func GetAnggotaHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateStatusAnggotaHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "PUT" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req models.UpdateStatusAnggotaRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -101,11 +91,6 @@ func UpdateStatusAnggotaHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreatePetugas(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req models.RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -143,11 +128,6 @@ func CreatePetugas(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPetugasHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 
 	rows, err := config.DB.Query(`
@@ -181,11 +161,6 @@ func GetPetugasHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeletePetugasHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "DELETE" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	idUser, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil || idUser <= 0 {
 		http.Error(w, `{"message":"ID petugas tidak valid"}`, http.StatusBadRequest)

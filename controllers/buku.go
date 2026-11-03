@@ -15,11 +15,6 @@ import (
 )
 
 func GetKatalogBuku(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 
 	queryStr := `
@@ -103,11 +98,6 @@ func GetKatalogBuku(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateBukuHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	var b models.Buku
 	err := json.NewDecoder(r.Body).Decode(&b)
 	if err != nil {
@@ -222,11 +212,6 @@ type updateBukuRequest struct {
 // UpdateBukuHandler mengubah sebagian field buku. Hanya field yang dikirim
 // yang diubah; field yang tidak dikirim tetap seperti semula.
 func UpdateBukuHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "PUT" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	idBuku, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil || idBuku <= 0 {
 		http.Error(w, `{"message":"ID buku tidak valid"}`, http.StatusBadRequest)
@@ -358,11 +343,6 @@ func UpdateBukuHandler(w http.ResponseWriter, r *http.Request) {
 // DeleteBukuHandler menghapus buku. Buku yang sedang dibooking, dipinjam,
 // atau terlambat tidak boleh dihapus supaya data peminjaman tidak menggantung.
 func DeleteBukuHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "DELETE" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	idBuku, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil || idBuku <= 0 {
 		http.Error(w, `{"message":"ID buku tidak valid"}`, http.StatusBadRequest)
@@ -420,11 +400,6 @@ var tipeGambarDiizinkan = map[string]string{
 // menyimpan berkas dengan nama acak di ./uploads, lalu mengembalikan URL-nya.
 // Kolom buku.gambar diisi terpisah lewat PUT /buku/{id}.
 func UploadGambarBukuHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, `{"message":"Method tidak diizinkan"}`, http.StatusMethodNotAllowed)
-		return
-	}
-
 	// batas kasar di level pembacaan; batas pasti dicek lewat header.Size
 	r.Body = http.MaxBytesReader(w, r.Body, batasUkuranGambar+(1<<20))
 	if err := r.ParseMultipartForm(1 << 20); err != nil {

@@ -288,14 +288,14 @@ Ada empat tingkat akses pada endpoint:
 
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| `POST` | `/buku/create` | Menambah buku |
+| `POST` | `/buku` atau `/buku/create` | Menambah buku |
 | `POST` | `/buku/upload` | Mengunggah gambar buku (multipart, maks 2 MB) |
 | `PUT` | `/buku/{id}` | Mengubah sebagian field buku |
 | `DELETE` | `/buku/{id}` | Menghapus buku (ditolak bila masih dibooking/dipinjam) |
-| `POST` | `/genre/create` | Menambah genre |
+| `POST` | `/genre` atau `/genre/create` | Menambah genre |
 | `PUT` | `/genre/{id}` | Mengubah nama genre |
 | `DELETE` | `/genre/{id}` | Menghapus genre |
-| `POST` | `/penerbit/create` | Menambah penerbit |
+| `POST` | `/penerbit` atau `/penerbit/create` | Menambah penerbit |
 | `PUT` | `/penerbit/{id}` | Mengubah nama penerbit |
 | `DELETE` | `/penerbit/{id}` | Menghapus penerbit |
 | `POST` | `/peminjaman/confirm` | Mengonfirmasi booking menjadi peminjaman |
@@ -311,9 +311,9 @@ Ada empat tingkat akses pada endpoint:
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | `GET` | `/petugas` | Daftar akun petugas beserta shift dan status aktif |
-| `POST` | `/petugas/create` | Membuat akun dengan role dari body (1/2/3) beserta shift |
+| `POST` | `/petugas` atau `/petugas/create` | Membuat akun dengan role dari body (1/2/3) beserta shift |
 | `DELETE` | `/petugas/{id}` | Menghapus akun petugas |
-| `POST` | `/fasilitas/create` | Menambah fasilitas (`nama_fasilitas`, `kondisi`, `jumlah`) |
+| `POST` | `/fasilitas` atau `/fasilitas/create` | Menambah fasilitas (`nama_fasilitas`, `kondisi`, `jumlah`) |
 | `DELETE` | `/fasilitas/{id}` | Menghapus fasilitas |
 | `PUT` | `/admin/user/role` | Mengubah role pengguna |
 | `PUT` | `/admin/user/reset-password` | Reset password pengguna (bisa menggunakan `id_user` atau `username`) |
@@ -466,6 +466,7 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **3 November 2026**
 
+- Routing RESTful diterapkan di `routes/routes.go` dengan metode HTTP eksplisit pada semua route, mendukung endpoint kanonikal `POST /buku`, `POST /penerbit`, `POST /genre`, `POST /fasilitas`, `POST /petugas` (tetap kompatibel dengan `/create`), serta menghapus pemeriksaan `r.Method` manual di 9 controller
 - Endpoint `GET /buku` kini mendukung filter pencarian judul/penulis (`?q=` atau `?search=`) serta pagination (`?limit=`, `?page=`, `?offset=`)
 - CORS middleware pada `main.go` kini dapat dikonfigurasi melalui variabel lingkungan `CORS_ALLOWED_ORIGIN` (default `*` jika tidak diset)
 - Endpoint `PUT /admin/user/reset-password` kini mendukung identifikasi pengguna melalui `id_user` (seragam dengan `PUT /admin/user/role`) selain `username`

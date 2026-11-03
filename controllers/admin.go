@@ -14,6 +14,7 @@ type UpdateRoleRequest struct {
 }
 
 type ResetPasswordRequest struct {
+	IDUser      int    `json:"id_user"`
 	Username    string `json:"username"`
 	NewPassword string `json:"new_password"`
 }
@@ -63,7 +64,7 @@ func AdminResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req ResetPasswordRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil || req.Username == "" || req.NewPassword == "" {
+	if err != nil || req.NewPassword == "" || (req.IDUser <= 0 && req.Username == "") {
 		http.Error(w, `{"message":"Format JSON tidak valid atau data kosong"}`, http.StatusBadRequest)
 		return
 	}
@@ -74,8 +75,17 @@ func AdminResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "UPDATE user SET password = ? WHERE username = ?"
-	result, err := config.DB.Exec(query, string(hashedPassword), req.Username)
+	var query string
+	var identifier interface{}
+	if req.IDUser > 0 {
+		query = "UPDATE user SET password = ? WHERE id_user = ?"
+		identifier = req.IDUser
+	} else {
+		query = "UPDATE user SET password = ? WHERE username = ?"
+		identifier = req.Username
+	}
+
+	result, err := config.DB.Exec(query, string(hashedPassword), identifier)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -36,6 +36,7 @@ func SetupRoutes() *http.ServeMux {
 	mux.Handle("PUT /genre/{id}", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.UpdateGenreHandler))))
 	mux.Handle("DELETE /genre/{id}", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.DeleteGenreHandler))))
 	mux.Handle("POST /peminjaman/confirm", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.ConfirmPinjam))))
+	mux.Handle("POST /booking/cleanup", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.CleanupExpiredBookingsHandler))))
 	mux.Handle("GET /pengembalian", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.GetPengembalianHandler))))
 	mux.Handle("POST /pengembalian", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.PengembalianHandler))))
 	mux.Handle("GET /absensi", middleware.AuthMiddleware(middleware.PetugasOrAdmin(http.HandlerFunc(controllers.GetAbsensiHandler))))

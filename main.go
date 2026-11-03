@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"os"
 	"perpustakaan-api/config"
+	"perpustakaan-api/controllers"
 	"perpustakaan-api/routes"
 	"strings"
+	"time"
 )
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -32,6 +34,9 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 func main() {
 	config.ConnectDB()
+
+	// Jalankan background job pembatalan booking kedaluwarsa & pengembalian stok
+	controllers.StartBookingCleanupJob(1 * time.Minute)
 
 	if os.Getenv("JWT_SECRET") == "" {
 		log.Fatal("JWT_SECRET belum diisi di .env, server dihentikan")

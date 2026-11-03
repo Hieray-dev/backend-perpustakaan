@@ -299,6 +299,7 @@ Ada empat tingkat akses pada endpoint:
 | `PUT` | `/penerbit/{id}` | Mengubah nama penerbit |
 | `DELETE` | `/penerbit/{id}` | Menghapus penerbit |
 | `POST` | `/peminjaman/confirm` | Mengonfirmasi booking menjadi peminjaman |
+| `POST` | `/booking/cleanup` | Memicu pembersihan booking kedaluwarsa & mengembalikan stok buku secara on-demand |
 | `GET` | `/pengembalian` | Daftar riwayat pengembalian beserta denda dan data peminjaman |
 | `POST` | `/pengembalian` | Mencatat pengembalian dan menghitung denda |
 | `GET` | `/absensi` | Daftar riwayat absensi beserta nama pengguna dan shift |
@@ -466,6 +467,7 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **3 November 2026**
 
+- Background job pembersihan booking kedaluwarsa diterapkan pada `main.go` dan `controllers/peminjaman.go` (berjalan otomatis setiap menit dan saat startup, serta endpoint on-demand `POST /booking/cleanup` bagi petugas/admin) untuk membatalkan booking lewat batas waktu dan mengembalikan stok buku
 - Routing RESTful diterapkan di `routes/routes.go` dengan metode HTTP eksplisit pada semua route, mendukung endpoint kanonikal `POST /buku`, `POST /penerbit`, `POST /genre`, `POST /fasilitas`, `POST /petugas` (tetap kompatibel dengan `/create`), serta menghapus pemeriksaan `r.Method` manual di 9 controller
 - Endpoint `GET /buku` kini mendukung filter pencarian judul/penulis (`?q=` atau `?search=`) serta pagination (`?limit=`, `?page=`, `?offset=`)
 - CORS middleware pada `main.go` kini dapat dikonfigurasi melalui variabel lingkungan `CORS_ALLOWED_ORIGIN` (default `*` jika tidak diset)

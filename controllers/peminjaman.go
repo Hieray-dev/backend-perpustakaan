@@ -191,3 +191,94 @@ func ConfirmPinjam(w http.ResponseWriter, r *http.Request) {
 		"tanggal_kembali":  tanggalKembali,
 	})
 }
+
+// CancelExpiredBookings membatalkan booking yang sudah melewati batas_waktu
+// dan mengembalikan stok buku ke database secara aman dalam satu transaksi.
+func CancelExpiredBookings() (int, error) {
+	tx, err := config.DB.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query(`
+		SELECT id_peminjaman, id_buku
+		FROM peminjaman
+		WHERE status = 'booking' AND batas_waktu < NOW()
+		FOR UPDATE`)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	type expiredBooking struct {
+		idPinjam int
+		idBuku   int
+	}
+	var listExpired []expiredBooking
+	for rows.Next() {
+		var b expiredBooking
+		if err := rows.Scan(&b.idPinjam, &b.idBuku); err != nil {
+			return 0, err
+		}
+		listExpired = append(listExpired, b)
+	}
+	rows.Close()
+
+	if len(listExpired) == 0 {
+		return 0, nil
+	}
+
+	for _, b := range listExpired {
+		_, err = tx.Exec("UPDATE peminjaman SET status = 'batal' WHERE id_peminjaman = ?", b.idPinjam)
+		if err != nil {
+			return 0, err
+		}
+		_, err = tx.Exec("UPDATE buku SET stok = stok + 1 WHERE id_buku = ?", b.idBuku)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	log.Printf("[CLEANUP-BOOKING] Berhasil membatalkan %d booking kedaluwarsa dan mengembalikan stok\n", len(listExpired))
+	return len(listExpired), nil
+}
+
+// CleanupExpiredBookingsHandler endpoint on-demand bagi petugas/admin untuk memicu pembatalan booking kedaluwarsa
+func CleanupExpiredBookingsHandler(w http.ResponseWriter, r *http.Request) {
+	count, err := CancelExpiredBookings()
+	if err != nil {
+		log.Printf("Gagal membersihkan booking kedaluwarsa: %v", err)
+		http.Error(w, `{"message":"Gagal memproses pembatalan booking kedaluwarsa"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":    "Pembersihan booking kedaluwarsa selesai",
+		"dibatalkan": count,
+	})
+}
+
+// StartBookingCleanupJob menjalankan pembersihan booking kedaluwarsa secara berkala di background
+func StartBookingCleanupJob(interval time.Duration) {
+	go func() {
+		// Jalankan sekali saat startup
+		if _, err := CancelExpiredBookings(); err != nil {
+			log.Printf("[CLEANUP-BOOKING-JOB] Error pada startup: %v\n", err)
+		}
+
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			if _, err := CancelExpiredBookings(); err != nil {
+				log.Printf("[CLEANUP-BOOKING-JOB] Error periodic: %v\n", err)
+			}
+		}
+	}()
+}

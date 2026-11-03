@@ -53,7 +53,8 @@ func GetRiwayatHandler(w http.ResponseWriter, r *http.Request) {
 		rows, err = config.DB.Query(baseQuery + " ORDER BY p.id_peminjaman DESC")
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Gagal mengambil data riwayat peminjaman:", err)
+		http.Error(w, `{"message":"Gagal mengambil data riwayat peminjaman"}`, http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()

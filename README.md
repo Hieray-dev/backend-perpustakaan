@@ -465,6 +465,7 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **3 November 2026**
 
+- Pesan error database pada `GET /histori/riwayat` disembunyikan dari client dan diganti response JSON umum (`500`) serta dicatat di log server untuk keamanan
 - Response `POST /login` kini menyertakan `"nama_role"` (`"Admin"`, `"Petugas"`, atau `"Anggota"`)
   hasil `LEFT JOIN` ke tabel `role` sehingga frontend tidak perlu menebak dari angka `id_role`
 - Kegagalan pembacaan baris (`rows.Scan`) pada `GET /histori/riwayat` kini dicatat di log server

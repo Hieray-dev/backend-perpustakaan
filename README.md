@@ -464,6 +464,8 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **3 November 2026**
 
+- Kegagalan pembacaan baris (`rows.Scan`) pada `GET /histori/riwayat` kini dicatat di log server
+  sebelum melanjutkan ke baris berikutnya (sebelumnya dilewati secara senyap)
 - Kode transaksi booking (`kode_transaksi`) pada `POST /booking` kini ditambahkan 4 karakter
   heksadesimal acak (`crypto/rand`, format `BK-DDMMHHMMSS-XXXX`, 18 karakter) agar tidak
   bentrok (`UNIQUE KEY`) bila ada beberapa permintaan booking di detik yang sama

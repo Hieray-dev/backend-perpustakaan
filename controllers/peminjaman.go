@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"perpustakaan-api/config"
 	"perpustakaan-api/middleware"
@@ -73,6 +74,7 @@ func GetRiwayatHandler(w http.ResponseWriter, r *http.Request) {
 			&isActive,
 		)
 		if err != nil {
+			log.Println("Gagal membaca baris riwayat peminjaman:", err)
 			continue
 		}
 

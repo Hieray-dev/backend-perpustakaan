@@ -195,6 +195,7 @@ DB_NAME=db_perpustakaan
 
 JWT_SECRET=
 SERVER_PORT=:8080
+CORS_ALLOWED_ORIGIN=*
 ```
 
 | Variabel | Keterangan |
@@ -206,6 +207,7 @@ SERVER_PORT=:8080
 | `DB_NAME` | Nama database, gunakan `db_perpustakaan` |
 | `JWT_SECRET` | Kunci penandatanganan token. **Wajib diisi**, dan jangan diganti setelah ada token aktif karena semua token lama langsung tidak berlaku |
 | `SERVER_PORT` | Port server. Boleh `8080` atau `:8080`, keduanya diterima |
+| `CORS_ALLOWED_ORIGIN` | Origin frontend yang diizinkan (default `*` bila dikosongkan) |
 
 File `.env` sudah masuk `.gitignore` dan tidak boleh di-commit.
 
@@ -226,8 +228,7 @@ Server mengikat ke `0.0.0.0`, jadi bisa diakses dari perangkat lain di jaringan 
 lewat alamat IP komputermu.
 
 Jalankan dari **root repo**, karena `.env` dan folder `uploads/` dibaca lewat path relatif.
-CORS masih terbuka untuk semua origin (`*`) — cocok untuk pengembangan, sebaiknya dibatasi
-saat produksi.
+CORS dapat dibatasi ke domain frontend melalui variabel `CORS_ALLOWED_ORIGIN` di `.env` (default: `*`).
 
 Build ke satu file binary:
 
@@ -465,6 +466,7 @@ diserahkan, tersimpan di kolom `tanggal_kembali`). Tarif per hari dan perhitunga
 
 **3 November 2026**
 
+- CORS middleware pada `main.go` kini dapat dikonfigurasi melalui variabel lingkungan `CORS_ALLOWED_ORIGIN` (default `*` jika tidak diset)
 - Endpoint `PUT /admin/user/reset-password` kini mendukung identifikasi pengguna melalui `id_user` (seragam dengan `PUT /admin/user/role`) selain `username`
 - Konfigurasi *connection pool* MySQL diterapkan pada `config/db.go` (`SetMaxOpenConns(25)`, `SetMaxIdleConns(10)`, `SetConnMaxLifetime`, `SetConnMaxIdleTime`) untuk efisiensi dan mencegah koneksi terputus
 - Pesan error database pada `GET /histori/riwayat` disembunyikan dari client dan diganti response JSON umum (`500`) serta dicatat di log server untuk keamanan
